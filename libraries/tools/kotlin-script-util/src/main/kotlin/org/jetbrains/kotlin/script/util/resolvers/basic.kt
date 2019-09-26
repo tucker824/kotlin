@@ -16,21 +16,70 @@
 
 package org.jetbrains.kotlin.script.util.resolvers
 
+import com.amazonaws.services.cloudfront.model.InvalidArgumentException
 import org.jetbrains.kotlin.script.util.Repository
 import org.jetbrains.kotlin.script.util.resolvers.experimental.*
 import java.io.File
+import java.lang.Exception
 import java.net.MalformedURLException
 import java.net.URL
+import kotlin.script.experimental.api.ResultWithDiagnostics
+import kotlin.script.experimental.api.asSuccess
+import kotlin.script.experimental.api.makeFailureResult
 
 class DirectResolver : GenericRepositoryWithBridge {
-    override fun tryResolve(artifactCoordinates: GenericArtifactCoordinates): Iterable<File>? =
-        artifactCoordinates.string.takeUnless(String::isBlank)
-            ?.let(::File)?.takeIf { it.exists() && (it.isFile || it.isDirectory) }?.let { listOf(it) }
 
-    override fun tryAddRepository(repositoryCoordinates: GenericRepositoryCoordinates): Boolean = false
+    private fun makeResolveFailureResult(location: String, message: String) = ResolveArtifactResult.Failure(listOf(ResolveAttemptFailure(location, message)))
+
+    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult {
+        if(!accepts(artifactCoordinates)) throw InvalidArgumentException("Invalid arguments: $artifactCoordinates")
+        val file = File(artifactCoordinates.string)
+        if(!file.exists()) return makeResolveFailureResult(file.canonicalPath, "File doesn't exist")
+        if(!file.isFile && !file.isDirectory) return makeResolveFailureResult(file.canonicalPath, "Path is neither file nor directory")
+        return ResolveArtifactResult.Success(listOf(file))
+    }
+
+    override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) =
+        throw Exception("DirectResolver doesn't support adding repositories")
+
+    override fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean = false
+
+    override fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean =
+        !artifactCoordinates.string.isBlank() && !artifactCoordinates.string.contains(':')
 }
 
 class FlatLibDirectoryResolver(vararg paths: File) : GenericRepositoryWithBridge {
+
+    override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) {
+        val repoDir = repositoryCoordinates.file ?: throw Exception("Invalid repository location: '${repositoryCoordinates.string}'")
+        localRepos.add(repoDir)
+    }
+
+    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult {
+        if(!accepts(artifactCoordinates)) throw Exception("Path is empty")
+
+        val resolveAttempts = mutableListOf<ResolveAttemptFailure>()
+
+        val path = artifactCoordinates.string
+        for (repo in localRepos) {
+            // TODO: add coordinates and wildcard matching
+            val file = File(repo, path)
+            when {
+                !file.exists() -> resolveAttempts.add(ResolveAttemptFailure(file.canonicalPath, "File not exists"))
+                !file.isFile && !file.isDirectory -> resolveAttempts.add(ResolveAttemptFailure(file.canonicalPath, "Path is neither file nor directory"))
+                else -> return ResolveArtifactResult.Success(listOf(file))
+            }
+        }
+        return ResolveArtifactResult.Failure(resolveAttempts)
+    }
+
+    override fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean {
+        return artifactCoordinates.string.takeUnless(String::isBlank)?.let { path ->
+            localRepos.any { File(it, path).exists() }
+        } ?: false
+    }
+
+    override fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean = repositoryCoordinates.file != null
 
     private val localRepos = arrayListOf<File>()
 
@@ -39,23 +88,6 @@ class FlatLibDirectoryResolver(vararg paths: File) : GenericRepositoryWithBridge
             if (!path.exists() || !path.isDirectory) throw IllegalArgumentException("Invalid flat lib directory repository path '$path'")
         }
         localRepos.addAll(paths)
-    }
-
-    override fun tryResolve(artifactCoordinates: GenericArtifactCoordinates): Iterable<File>? {
-        for (path in localRepos) {
-            // TODO: add coordinates and wildcard matching
-            val res = artifactCoordinates.string.takeUnless(String::isBlank)
-                ?.let { File(path, it) }
-                ?.takeIf { it.exists() && (it.isFile || it.isDirectory) }
-            if (res != null) return listOf(res)
-        }
-        return null
-    }
-
-    override fun tryAddRepository(repositoryCoordinates: GenericRepositoryCoordinates): Boolean {
-        val repoDir = repositoryCoordinates.file ?: return false
-        localRepos.add(repoDir)
-        return true
     }
 
     companion object {

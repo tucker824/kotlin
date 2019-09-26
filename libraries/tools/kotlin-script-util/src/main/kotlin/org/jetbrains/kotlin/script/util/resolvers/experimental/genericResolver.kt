@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.script.util.resolvers.toRepositoryFileOrNull
 import org.jetbrains.kotlin.script.util.resolvers.toRepositoryUrlOrNull
 import java.io.File
 import java.net.URL
+import kotlin.script.experimental.api.ResultWithDiagnostics
 
 interface GenericArtifactCoordinates {
     val string: String
@@ -25,14 +26,40 @@ interface GenericRepositoryCoordinates {
 }
 
 interface GenericResolver {
-    fun tryResolve(artifactCoordinates: GenericArtifactCoordinates): Iterable<File>?
-    fun tryAddRepository(repositoryCoordinates: GenericRepositoryCoordinates): Boolean
+    fun accepts(repositoryCoordinates: GenericRepositoryCoordinates) : Boolean
+    fun accepts(artifactCoordinates: GenericArtifactCoordinates) : Boolean
 
-    fun tryResolve(artifactCoordinates: String): Iterable<File>? = tryResolve(BasicArtifactCoordinates(artifactCoordinates))
-
-    fun tryAddRepository(repositoryCoordinates: String, id: String? = null): Boolean =
-        tryAddRepository(BasicRepositoryCoordinates(repositoryCoordinates, id))
+    fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult
+    fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates)
 }
+
+data class ResolveAttemptFailure(val location: String, val message: String)
+
+sealed class ResolveArtifactResult {
+    data class Success(val files: Iterable<File>): ResolveArtifactResult()
+
+    data class Failure(val attempts: List<ResolveAttemptFailure>): ResolveArtifactResult()
+}
+
+fun GenericResolver.tryResolve(artifactCoordinates: GenericArtifactCoordinates): Iterable<File>? =
+    if (accepts(artifactCoordinates)) resolve(artifactCoordinates).let {
+        when (it) {
+            is ResolveArtifactResult.Success -> it.files
+            else -> null
+        }
+    } else null
+
+fun GenericResolver.tryAddRepository(repositoryCoordinates: GenericRepositoryCoordinates) =
+    if (accepts(repositoryCoordinates)) {
+        addRepository(repositoryCoordinates)
+        true
+    } else false
+
+fun GenericResolver.tryResolve(artifactCoordinates: String): Iterable<File>? =
+    tryResolve(BasicArtifactCoordinates(artifactCoordinates))
+
+fun GenericResolver.tryAddRepository(repositoryCoordinates: String, id: String? = null): Boolean =
+    tryAddRepository(BasicRepositoryCoordinates(repositoryCoordinates, id))
 
 open class BasicArtifactCoordinates(override val string: String) : GenericArtifactCoordinates
 
