@@ -168,7 +168,7 @@ class JavacWrapper(
         if (javaFilesNumber == 0) return true
 
         setClassPathForCompilation(outDir)
-        makeOutputDirectoryClassesVisible()
+        //makeOutputDirectoryClassesVisible()
 
         val outputPath =
             // Includes a hack with 'takeIf' for CLI test, to have stable string here (independent from random test directory)
