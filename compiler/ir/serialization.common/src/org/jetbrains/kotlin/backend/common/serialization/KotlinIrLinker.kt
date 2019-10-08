@@ -502,6 +502,13 @@ abstract class KotlinIrLinker(
     protected abstract fun readFileCount(moduleDescriptor: ModuleDescriptor): Int
 
     protected abstract fun checkAccessibility(declarationDescriptor: DeclarationDescriptor): Boolean
+
+    /**
+     * Check that descriptor has no IR counter-part.
+     * For example, it's the case for Native interop libraries.
+     */
+    protected abstract fun DeclarationDescriptor.hasNoDeserializedForm(): Boolean
+
     protected open fun handleNoModuleDeserializerFound(key: UniqId): DeserializationState<*> {
         error("Deserializer for declaration $key is not found")
     }
@@ -518,8 +525,7 @@ abstract class KotlinIrLinker(
     private fun findDeserializedDeclarationForDescriptor(descriptor: DeclarationDescriptor): DeclarationDescriptor? {
         val topLevelDescriptor = descriptor.findTopLevelDescriptor() as DeclarationDescriptorWithVisibility
 
-        // This is Native specific. Try to eliminate.
-        if (topLevelDescriptor.module.isForwardDeclarationModule) return null
+        if (topLevelDescriptor.hasNoDeserializedForm()) return null
 
         require(checkAccessibility(topLevelDescriptor)) {
             "Locally accessible declarations should not be accessed here $topLevelDescriptor"
