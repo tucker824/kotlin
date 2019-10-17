@@ -10,27 +10,27 @@ import org.jetbrains.kotlin.script.util.resolvers.experimental.BasicRepositoryCo
 import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericArtifactCoordinates
 import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericRepositoryCoordinates
 import java.io.File
+import kotlin.script.experimental.api.ResultWithDiagnostics
+import kotlin.script.experimental.api.ScriptDiagnostic
 
-interface GenericDependenciesResolver {
-    fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean
-    fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean
+abstract class GenericDependenciesResolver {
 
-    fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult
-    fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates)
-}
+    abstract fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean
+    abstract fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean
 
-data class ResolveAttemptFailure(val location: String, val message: String)
+    abstract fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>>
+    abstract fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates)
 
-sealed class ResolveArtifactResult {
-    data class Success(val files: Iterable<File>): ResolveArtifactResult()
+    protected fun makeResolveFailureResult(message: String) = makeResolveFailureResult(listOf(message))
 
-    data class Failure(val attempts: List<ResolveAttemptFailure>): ResolveArtifactResult()
+    protected fun makeResolveFailureResult(messages: Iterable<String>) =
+        ResultWithDiagnostics.Failure(messages.map { ScriptDiagnostic(it, ScriptDiagnostic.Severity.INFO)})
 }
 
 fun GenericDependenciesResolver.tryResolve(artifactCoordinates: GenericArtifactCoordinates): Iterable<File>? =
     if (accepts(artifactCoordinates)) resolve(artifactCoordinates).let {
         when (it) {
-            is ResolveArtifactResult.Success -> it.files
+            is ResultWithDiagnostics.Success -> it.value
             else -> null
         }
     } else null

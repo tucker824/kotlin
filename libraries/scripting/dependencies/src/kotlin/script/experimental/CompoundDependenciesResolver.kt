@@ -6,8 +6,11 @@
 package kotlin.script.experimental
 
 import org.jetbrains.kotlin.script.util.resolvers.experimental.*
+import java.io.File
+import kotlin.script.experimental.api.ResultWithDiagnostics
+import kotlin.script.experimental.api.ScriptDiagnostic
 
-class CompoundDependenciesResolver(private val resolvers: List<GenericDependenciesResolver>) : GenericDependenciesResolver {
+class CompoundDependenciesResolver(private val resolvers: List<GenericDependenciesResolver>) : GenericDependenciesResolver() {
 
     constructor(vararg resolvers: GenericDependenciesResolver) : this(resolvers.toList())
 
@@ -24,19 +27,19 @@ class CompoundDependenciesResolver(private val resolvers: List<GenericDependenci
             throw Exception("Failed to detect repository type: ${repositoryCoordinates.string}")
     }
 
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult {
+    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> {
 
-        val resolveAttempts = mutableListOf<ResolveAttemptFailure>()
+        val reports = mutableListOf<ScriptDiagnostic>()
 
         for (resolver in resolvers) {
             if (resolver.accepts(artifactCoordinates)) {
                 when (val resolveResult = resolver.resolve(artifactCoordinates)) {
-                    is ResolveArtifactResult.Failure -> resolveAttempts.addAll(resolveResult.attempts)
+                    is ResultWithDiagnostics.Failure -> reports.addAll(resolveResult.reports)
                     else -> return resolveResult
                 }
             }
         }
-        return ResolveArtifactResult.Failure(resolveAttempts)
+        return ResultWithDiagnostics.Failure(reports)
     }
 
 }

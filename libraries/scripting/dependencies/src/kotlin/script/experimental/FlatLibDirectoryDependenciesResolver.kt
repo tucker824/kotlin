@@ -11,30 +11,31 @@ import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericArtifactCo
 import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericRepositoryCoordinates
 import java.io.File
 import java.lang.Exception
+import kotlin.script.experimental.api.ResultWithDiagnostics
 
-class FlatLibDirectoryDependenciesResolver(vararg paths: File) : GenericDependenciesResolver {
+class FlatLibDirectoryDependenciesResolver(vararg paths: File) : GenericDependenciesResolver() {
 
     override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) {
         val repoDir = repositoryCoordinates.file ?: throw Exception("Invalid repository location: '${repositoryCoordinates.string}'")
         localRepos.add(repoDir)
     }
 
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult {
+    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> {
         if(!accepts(artifactCoordinates)) throw Exception("Path is empty")
 
-        val resolveAttempts = mutableListOf<ResolveAttemptFailure>()
+        val resolveAttempts = mutableListOf<String>()
 
         val path = artifactCoordinates.string
         for (repo in localRepos) {
             // TODO: add coordinates and wildcard matching
             val file = File(repo, path)
             when {
-                !file.exists() -> resolveAttempts.add(ResolveAttemptFailure(file.canonicalPath, "File not exists"))
-                !file.isFile && !file.isDirectory -> resolveAttempts.add(ResolveAttemptFailure(file.canonicalPath, "Path is neither file nor directory"))
-                else -> return ResolveArtifactResult.Success(listOf(file))
+                !file.exists() -> resolveAttempts.add("File '${file.canonicalPath}' not exists")
+                !file.isFile && !file.isDirectory -> resolveAttempts.add("Path '${file.canonicalPath}' is neither file nor directory")
+                else -> return ResultWithDiagnostics.Success(listOf(file))
             }
         }
-        return ResolveArtifactResult.Failure(resolveAttempts)
+        return makeResolveFailureResult(resolveAttempts)
     }
 
     override fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean {

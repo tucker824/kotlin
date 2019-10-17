@@ -22,8 +22,10 @@ import org.apache.ivy.util.Message
 import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericArtifactCoordinates
 import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericRepositoryCoordinates
 import org.jetbrains.kotlin.script.util.resolvers.experimental.MavenArtifactCoordinates
+import java.io.File
+import kotlin.script.experimental.api.ResultWithDiagnostics
 
-class IvyDependenciesResolver : GenericDependenciesResolver {
+class IvyDependenciesResolver : GenericDependenciesResolver() {
     data class IvyArtifactCoordinates(
         val groupId: String,
         val artifactName: String,
@@ -60,7 +62,7 @@ class IvyDependenciesResolver : GenericDependenciesResolver {
             }
         }
 
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult =
+    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> =
         resolveArtifact(artifactCoordinates.ivyCoordinates!!)
 
 
@@ -68,7 +70,7 @@ class IvyDependenciesResolver : GenericDependenciesResolver {
 
     private fun resolveArtifact(
         artifact: IvyArtifactCoordinates
-    ): ResolveArtifactResult {
+    ): ResultWithDiagnostics<Iterable<File>> {
 
         if (ivyResolvers.isEmpty() || ivyResolvers.none { it.name == "central" }) {
             ivyResolvers.add(
@@ -127,7 +129,7 @@ class IvyDependenciesResolver : GenericDependenciesResolver {
 
             val report = ivy.resolve(ivyFile.toURI().toURL(), resolveOptions)
 
-            return ResolveArtifactResult.Success(report.allArtifactsReports.map { it.localFile })
+            return ResultWithDiagnostics.Success(report.allArtifactsReports.map { it.localFile })
         }
     }
 

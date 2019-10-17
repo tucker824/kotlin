@@ -9,17 +9,16 @@ import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericArtifactCo
 import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericRepositoryCoordinates
 import java.io.File
 import java.lang.Exception
+import kotlin.script.experimental.api.ResultWithDiagnostics
 
-class DirectDependenciesResolver : GenericDependenciesResolver {
+class DirectDependenciesResolver : GenericDependenciesResolver() {
 
-    private fun makeResolveFailureResult(location: String, message: String) = ResolveArtifactResult.Failure(listOf(ResolveAttemptFailure(location, message)))
-
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult {
+    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> {
         if(!accepts(artifactCoordinates)) throw IllegalArgumentException("Invalid arguments: $artifactCoordinates")
         val file = File(artifactCoordinates.string)
-        if(!file.exists()) return makeResolveFailureResult(file.canonicalPath, "File doesn't exist")
-        if(!file.isFile && !file.isDirectory) return makeResolveFailureResult(file.canonicalPath, "Path is neither file nor directory")
-        return ResolveArtifactResult.Success(listOf(file))
+        if(!file.exists()) return makeResolveFailureResult("File '${file.canonicalPath}' doesn't exist")
+        if(!file.isFile && !file.isDirectory) return makeResolveFailureResult("Path '${file.canonicalPath}' is neither file nor directory")
+        return ResultWithDiagnostics.Success(listOf(file))
     }
 
     override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) =

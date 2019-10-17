@@ -13,10 +13,11 @@ import org.sonatype.aether.util.artifact.DefaultArtifact
 import org.sonatype.aether.util.artifact.JavaScopes
 import java.io.File
 import java.util.ArrayList
+import kotlin.script.experimental.api.ResultWithDiagnostics
 
 val mavenCentral = RemoteRepository("maven-central", "default", "https://repo.maven.apache.org/maven2/")
 
-class MavenDependenciesResolver : GenericDependenciesResolver {
+class MavenDependenciesResolver : GenericDependenciesResolver() {
 
     override fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean =
         artifactCoordinates.mavenArtifact != null
@@ -36,7 +37,7 @@ class MavenDependenciesResolver : GenericDependenciesResolver {
 
     private fun String?.isValidParam() = this?.isNotBlank() ?: false
 
-    private val GenericArtifactCoordinates.mavenArtifact : DefaultArtifact?
+    private val GenericArtifactCoordinates.mavenArtifact: DefaultArtifact?
         get() {
             fun String?.nullIfBlank(): String? = this?.takeUnless(kotlin.String::isBlank)
 
@@ -57,20 +58,18 @@ class MavenDependenciesResolver : GenericDependenciesResolver {
             }
         }
 
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResolveArtifactResult {
+    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> {
 
         val artifactId = artifactCoordinates.mavenArtifact!!
 
-        return try {
+        try {
             val deps = Aether(remoteRepositories(), localRepo).resolve(artifactId, JavaScopes.RUNTIME)
             if (deps != null)
-                ResolveArtifactResult.Success(deps.map { it.file })
-            else {
-                ResolveArtifactResult.Failure(allRepositories().map { ResolveAttemptFailure(it, "$artifactId not found") })
-            }
+                return ResultWithDiagnostics.Success(deps.map { it.file })
         } catch (e: DependencyResolutionException) {
-            ResolveArtifactResult.Failure(allRepositories().map { ResolveAttemptFailure(it, "failed to resolve dependencies") })
+
         }
+        return makeResolveFailureResult(allRepositories().map { "$it: $artifactId not found" })
     }
 
     override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) {
