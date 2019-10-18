@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.fir.impl.FirAbstractAnnotatedElement
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaMethod
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaValueParameter
 import org.jetbrains.kotlin.fir.java.enhancement.readOnlyToMutable
+import org.jetbrains.kotlin.fir.java.types.FirJavaSuperTypeRef
 import org.jetbrains.kotlin.fir.java.types.FirJavaTypeRef
 import org.jetbrains.kotlin.fir.references.impl.FirErrorNamedReferenceImpl
 import org.jetbrains.kotlin.fir.references.impl.FirResolvedCallableReferenceImpl
@@ -76,9 +77,9 @@ internal fun FirTypeRef.toNotNullConeKotlinType(
     }
 
 internal fun JavaType?.toNotNullConeKotlinType(
-    session: FirSession, javaTypeParameterStack: JavaTypeParameterStack
+    session: FirSession, javaTypeParameterStack: JavaTypeParameterStack, mapToKotlin: Boolean = true
 ): ConeLookupTagBasedType {
-    return toConeKotlinTypeWithNullability(session, javaTypeParameterStack, isNullable = false)
+    return toConeKotlinTypeWithNullability(session, javaTypeParameterStack, isNullable = false, mapToKotlin = mapToKotlin)
 }
 
 internal fun JavaType.toFirJavaTypeRef(session: FirSession, javaTypeParameterStack: JavaTypeParameterStack): FirJavaTypeRef {
@@ -86,6 +87,16 @@ internal fun JavaType.toFirJavaTypeRef(session: FirSession, javaTypeParameterSta
     return FirJavaTypeRef(
         annotations = annotations.map { it.toFirAnnotationCall(session, javaTypeParameterStack) },
         type = this
+    )
+}
+
+internal fun JavaType.toFirJavaSuperTypeRef(session: FirSession, javaTypeParameterStack: JavaTypeParameterStack): FirJavaSuperTypeRef {
+    val annotations = (this as? JavaClassifierType)?.annotations.orEmpty()
+    return FirJavaSuperTypeRef(
+        annotations = annotations.map { it.toFirAnnotationCall(session, javaTypeParameterStack) },
+        javaType = this,
+        session = session,
+        javaTypeParameterStack = javaTypeParameterStack
     )
 }
 
@@ -101,11 +112,11 @@ internal fun JavaClassifierType.toFirResolvedTypeRef(
 }
 
 internal fun JavaType?.toConeKotlinTypeWithNullability(
-    session: FirSession, javaTypeParameterStack: JavaTypeParameterStack, isNullable: Boolean
+    session: FirSession, javaTypeParameterStack: JavaTypeParameterStack, isNullable: Boolean, mapToKotlin: Boolean = true
 ): ConeLookupTagBasedType {
     return when (this) {
         is JavaClassifierType -> {
-            toConeKotlinTypeWithNullability(session, isNullable, javaTypeParameterStack)
+            toConeKotlinTypeWithNullability(session, isNullable, javaTypeParameterStack, mapToKotlin)
         }
         is JavaPrimitiveType -> {
             val primitiveType = type
@@ -144,13 +155,14 @@ internal fun JavaType?.toConeKotlinTypeWithNullability(
 }
 
 internal fun JavaClassifierType.toConeKotlinTypeWithNullability(
-    session: FirSession, isNullable: Boolean, javaTypeParameterStack: JavaTypeParameterStack
+    session: FirSession, isNullable: Boolean, javaTypeParameterStack: JavaTypeParameterStack, mapToKotlin: Boolean = true
 ): ConeLookupTagBasedType {
     return when (val classifier = classifier) {
         is JavaClass -> {
-            //val classId = classifier.classId!!
-            var classId = JavaToKotlinClassMap.mapJavaToKotlin(classifier.fqName!!) ?: classifier.classId!!
-            classId = classId.readOnlyToMutable() ?: classId
+            val javaClassId = classifier.classId!!
+            val classId = (if (mapToKotlin) JavaToKotlinClassMap.mapJavaToKotlin(classifier.fqName!!) ?: javaClassId else javaClassId).let {
+                it.readOnlyToMutable() ?: it
+            }
 
             val lookupTag = ConeClassLikeLookupTagImpl(classId)
             lookupTag.constructClassType(
