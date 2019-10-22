@@ -82,7 +82,9 @@ open class FunctionCodegen(
                         // in a sense, they are tail-call
                         !irFunction.isKnownToBeTailCall() &&
                         // TODO: We should generate two versions of inline suspend function: one with state-machine and one without
-                        !irFunction.isInline ->
+                        !irFunction.isInline &&
+                        // This is suspend lambda parameter of inline function
+                        irFunction.origin != IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA ->
                     generateStateMachineForNamedFunction(
                         irFunction, classCodegen, methodVisitor, flags, signature, continuationClassBuilder, element!!
                     )
