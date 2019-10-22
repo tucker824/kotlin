@@ -24,7 +24,7 @@ abstract class GenericDependenciesResolver {
     protected fun makeResolveFailureResult(message: String) = makeResolveFailureResult(listOf(message))
 
     protected fun makeResolveFailureResult(messages: Iterable<String>) =
-        ResultWithDiagnostics.Failure(messages.map { ScriptDiagnostic(it, ScriptDiagnostic.Severity.INFO)})
+        ResultWithDiagnostics.Failure(messages.map { ScriptDiagnostic(it, ScriptDiagnostic.Severity.WARNING)})
 }
 
 fun GenericDependenciesResolver.tryResolve(artifactCoordinates: GenericArtifactCoordinates): Iterable<File>? =
