@@ -16,6 +16,10 @@ data class CachedConfiguration(
 ) {
     val isUpToDate
         get() = file.modificationStamp == modificationStamp
+
+    companion object {
+        const val OUT_OF_DATE_STAMP = Long.MIN_VALUE
+    }
 }
 
 interface ScriptConfigurationCache {

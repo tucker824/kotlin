@@ -38,7 +38,7 @@ abstract class ScriptConfigurationCompositeCache(val project: Project) :
             CachedConfiguration(
                 file,
                 fromAttributes,
-                0 // to reload on first request
+                CachedConfiguration.OUT_OF_DATE_STAMP // to reload on first request
             )
         )
 
@@ -64,7 +64,7 @@ abstract class ScriptConfigurationCompositeCache(val project: Project) :
 
     override fun markOutOfDate(file: VirtualFile) {
         memoryCache.update(file) {
-            it?.copy(modificationStamp = 0)
+            it?.copy(modificationStamp = CachedConfiguration.OUT_OF_DATE_STAMP)
         }
     }
 

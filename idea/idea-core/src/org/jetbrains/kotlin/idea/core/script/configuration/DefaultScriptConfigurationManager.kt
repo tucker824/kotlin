@@ -14,8 +14,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.*
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfiguration
-import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationCompositeCache
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationCache
+import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationCompositeCache
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.BackgroundExecutor
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptsListener
@@ -97,7 +97,6 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
 
     /**
      * Loaded but not applied result.
-     * Thread safe since [backgroundExecutor] works in single thread.
      * Weakness required since it is hard to track editor and notification hiding.
      */
     private val notApplied = WeakHashMap<VirtualFile, CachedConfiguration>()
@@ -110,6 +109,14 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
                 // since ScriptConfigurationCompositeCache.all() will return only memory cached configuration
                 // so, result of all() will be changed on each load from fileAttributeCache
                 clearClassRootsCaches()
+            }
+
+            override fun markOutOfDate(file: VirtualFile) {
+                super.markOutOfDate(file)
+
+                synchronized(notApplied) {
+                    notApplied.remove(file)
+                }
             }
         }
     }
@@ -169,13 +176,15 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
                 // don't start loading if nothing was changed
                 // (in case we checking for up-to-date and loading concurrently)
                 if (!isUpToDate(file)) {
-                    val prevNotApplied = notApplied[virtualFile]
+                    val prevNotApplied = synchronized(notApplied) { notApplied[virtualFile] }
                     if (prevNotApplied?.isUpToDate == true) {
                         // reuse loaded but not applied result
                         // (in case we checking for up-to-date and waiting notification answer concurrently)
                         saveConfiguration(virtualFile, prevNotApplied.result.asSuccess(), false)
                     } else {
-                        notApplied.remove(virtualFile)
+                        synchronized(notApplied) {
+                            notApplied.remove(virtualFile)
+                        }
                         doReloadConfiguration(virtualFile, file, scriptDefinition)
                     }
                 }
@@ -247,7 +256,9 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
                         debug(file) {
                             "configuration changed, notification is shown: old = $oldConfiguration, new = $newConfiguration"
                         }
-                        notApplied[file] = CachedConfiguration(file, newConfiguration)
+                        synchronized(notApplied) {
+                            notApplied[file] = CachedConfiguration(file, newConfiguration)
+                        }
                         file.addScriptDependenciesNotificationPanel(
                             newConfiguration, project,
                             onClick = {
@@ -257,7 +268,9 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
                                 }
                             },
                             onHide = {
-                                notApplied.remove(file)
+                                synchronized(notApplied) {
+                                    notApplied.remove(file)
+                                }
                             }
                         )
                     }
@@ -268,7 +281,10 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
 
     override fun saveChangedConfiguration(file: VirtualFile, newConfiguration: ScriptCompilationConfigurationWrapper?) {
         super.saveChangedConfiguration(file, newConfiguration)
-        notApplied.remove(file)
+
+        synchronized(notApplied) {
+            notApplied.remove(file)
+        }
     }
 
     private fun saveReports(
