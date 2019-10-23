@@ -144,6 +144,11 @@ class KotlinGradleProjectResolverExtension : AbstractProjectResolverExtension() 
             ExternalSystemApiUtil.findAll(ideModule, GradleSourceSetData.KEY)
         } else listOf(ideModule)
 
+        val cachedDependencies = if (useModulePerSourceSet()) emptyList() else getDependencyModules(
+            ideModule,
+            gradleModule.project
+        )
+
         for (currentModuleNode in moduleNodesToProcess) {
             val toProcess = ArrayDeque<DataNode<out ModuleData>>().apply { add(currentModuleNode) }
             val discovered = HashSet<DataNode<out ModuleData>>().apply { add(currentModuleNode) }
@@ -182,10 +187,7 @@ class KotlinGradleProjectResolverExtension : AbstractProjectResolverExtension() 
                     }
                 }
 
-                val dependencies = if (useModulePerSourceSet()) moduleNode.getDependencies(ideProject) else getDependencyModules(
-                    ideModule,
-                    gradleModule.project
-                )
+                val dependencies = if (useModulePerSourceSet()) moduleNode.getDependencies(ideProject) else cachedDependencies
                 // queue only those dependencies that haven't been discovered earlier
                 dependencies.filterTo(toProcess, discovered::add)
             }
