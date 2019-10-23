@@ -25,7 +25,7 @@ class FirResolvedFunctionTypeRefImpl(
     override val isMarkedNullable: Boolean,
     override var receiverTypeRef: FirTypeRef?,
     override var returnTypeRef: FirTypeRef
-) : FirResolvedFunctionTypeRef, FirAbstractAnnotatedElement {
+) : FirResolvedFunctionTypeRef(), FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val valueParameters: MutableList<FirValueParameter> = mutableListOf()
 

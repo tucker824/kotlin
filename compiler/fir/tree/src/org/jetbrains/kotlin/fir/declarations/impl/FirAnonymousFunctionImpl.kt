@@ -34,7 +34,7 @@ class FirAnonymousFunctionImpl(
     override var returnTypeRef: FirTypeRef,
     override var receiverTypeRef: FirTypeRef?,
     override val symbol: FirAnonymousFunctionSymbol
-) : FirAnonymousFunction, FirModifiableFunction<FirAnonymousFunction>, FirAbstractAnnotatedElement {
+) : FirAnonymousFunction(), FirModifiableFunction<FirAnonymousFunction>, FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.DECLARATIONS
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var controlFlowGraphReference: FirControlFlowGraphReference = FirEmptyControlFlowGraphReference()

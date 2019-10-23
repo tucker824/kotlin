@@ -21,7 +21,7 @@ class FirDelegateFieldReferenceImpl(
     override val psi: PsiElement?,
     override val candidateSymbol: AbstractFirBasedSymbol<*>?,
     override val resolvedSymbol: FirDelegateFieldSymbol<*>
-) : FirDelegateFieldReference {
+) : FirDelegateFieldReference() {
     override val name: Name get() = Name.identifier("\$delegate")
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}

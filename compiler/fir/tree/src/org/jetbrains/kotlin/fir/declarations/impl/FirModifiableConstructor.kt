@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.fir.declarations.impl
 
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.fir.FirPureAbstractElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirConstructor
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationStatus
@@ -29,64 +30,30 @@ import org.jetbrains.kotlin.fir.visitors.*
  * DO NOT MODIFY IT MANUALLY
  */
 
-interface FirModifiableConstructor : FirConstructor, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
-    override val psi: PsiElement?
-    override val session: FirSession
-    override var resolvePhase: FirResolvePhase
-    override var returnTypeRef: FirTypeRef
-    override var receiverTypeRef: FirTypeRef?
-    override var controlFlowGraphReference: FirControlFlowGraphReference
-    override val typeParameters: MutableList<FirTypeParameter>
-    override val valueParameters: MutableList<FirValueParameter>
-    override var body: FirBlock?
-    override val name: Name
-    override var status: FirDeclarationStatus
-    override var containerSource: DeserializedContainerSource?
-    override val annotations: MutableList<FirAnnotationCall>
-    override val symbol: FirConstructorSymbol
-    override var delegatedConstructor: FirDelegatedConstructorCall?
-    override val isPrimary: Boolean
-    override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
-        returnTypeRef.accept(visitor, data)
-        receiverTypeRef?.accept(visitor, data)
-        controlFlowGraphReference.accept(visitor, data)
-        typeParameters.forEach { it.accept(visitor, data) }
-        valueParameters.forEach { it.accept(visitor, data) }
-        body?.accept(visitor, data)
-        status.accept(visitor, data)
-        annotations.forEach { it.accept(visitor, data) }
-        delegatedConstructor?.accept(visitor, data)
-    }
+abstract class FirModifiableConstructor : FirPureAbstractElement(), FirConstructor, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
+    abstract override val psi: PsiElement?
+    abstract override val session: FirSession
+    abstract override var resolvePhase: FirResolvePhase
+    abstract override var returnTypeRef: FirTypeRef
+    abstract override var receiverTypeRef: FirTypeRef?
+    abstract override var controlFlowGraphReference: FirControlFlowGraphReference
+    abstract override val typeParameters: MutableList<FirTypeParameter>
+    abstract override val valueParameters: MutableList<FirValueParameter>
+    abstract override var body: FirBlock?
+    abstract override val name: Name
+    abstract override var status: FirDeclarationStatus
+    abstract override var containerSource: DeserializedContainerSource?
+    abstract override val annotations: MutableList<FirAnnotationCall>
+    abstract override val symbol: FirConstructorSymbol
+    abstract override var delegatedConstructor: FirDelegatedConstructorCall?
+    abstract override val isPrimary: Boolean
+    abstract override fun <D> transformChildren(transformer: FirTransformer<D>, data: D): FirModifiableConstructor
 
-    override fun <D> transformChildren(transformer: FirTransformer<D>, data: D): FirModifiableConstructor {
-        transformReturnTypeRef(transformer, data)
-        receiverTypeRef = receiverTypeRef?.transformSingle(transformer, data)
-        transformControlFlowGraphReference(transformer, data)
-        typeParameters.transformInplace(transformer, data)
-        transformValueParameters(transformer, data)
-        body = body?.transformSingle(transformer, data)
-        status = status.transformSingle(transformer, data)
-        annotations.transformInplace(transformer, data)
-        delegatedConstructor = delegatedConstructor?.transformSingle(transformer, data)
-        return this
-    }
+    abstract override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirModifiableConstructor
 
-    override fun <D> transformReturnTypeRef(transformer: FirTransformer<D>, data: D): FirModifiableConstructor {
-        returnTypeRef = returnTypeRef.transformSingle(transformer, data)
-        return this
-    }
+    abstract override fun <D> transformControlFlowGraphReference(transformer: FirTransformer<D>, data: D): FirModifiableConstructor
 
-    override fun <D> transformControlFlowGraphReference(transformer: FirTransformer<D>, data: D): FirModifiableConstructor {
-        controlFlowGraphReference = controlFlowGraphReference.transformSingle(transformer, data)
-        return this
-    }
+    abstract override fun <D> transformValueParameters(transformer: FirTransformer<D>, data: D): FirModifiableConstructor
 
-    override fun <D> transformValueParameters(transformer: FirTransformer<D>, data: D): FirModifiableConstructor {
-        valueParameters.transformInplace(transformer, data)
-        return this
-    }
-
-    override fun replaceResolvePhase(newResolvePhase: FirResolvePhase) {
-        resolvePhase = newResolvePhase
-    }
+    abstract override fun replaceResolvePhase(newResolvePhase: FirResolvePhase)
 }

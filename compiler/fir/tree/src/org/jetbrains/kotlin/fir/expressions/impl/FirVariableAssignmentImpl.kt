@@ -24,7 +24,7 @@ class FirVariableAssignmentImpl(
     override var safe: Boolean,
     override var rValue: FirExpression,
     override var operation: FirOperation
-) : FirVariableAssignment, FirModifiableQualifiedAccess, FirAbstractAnnotatedElement {
+) : FirVariableAssignment(), FirModifiableQualifiedAccess, FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var explicitReceiver: FirExpression? = null
     override var dispatchReceiver: FirExpression = FirNoReceiverExpression

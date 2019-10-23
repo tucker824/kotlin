@@ -24,7 +24,7 @@ class FirResolvedQualifierImpl(
     override val psi: PsiElement?,
     override var packageFqName: FqName,
     override var relativeClassFqName: FqName?
-) : FirResolvedQualifier, FirAbstractAnnotatedElement {
+) : FirResolvedQualifier(), FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val classId: ClassId? get() = relativeClassFqName?.let {

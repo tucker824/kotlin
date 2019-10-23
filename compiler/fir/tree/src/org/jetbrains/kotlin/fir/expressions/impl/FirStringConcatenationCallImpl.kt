@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirStringConcatenationCallImpl(
     override val psi: PsiElement?
-) : FirStringConcatenationCall, FirCallWithArgumentList, FirAbstractAnnotatedElement {
+) : FirStringConcatenationCall(), FirCallWithArgumentList, FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val arguments: MutableList<FirExpression> = mutableListOf()
     override var typeRef: FirTypeRef = FirImplicitStringTypeRef(psi)

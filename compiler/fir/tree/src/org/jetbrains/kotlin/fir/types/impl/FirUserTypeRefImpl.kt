@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.fir.visitors.transformInplace
 open class FirUserTypeRefImpl(
     override val psi: PsiElement?,
     override val isMarkedNullable: Boolean
-) : FirUserTypeRef, FirAbstractAnnotatedElement {
+) : FirUserTypeRef(), FirAbstractAnnotatedElement {
     override val qualifier: MutableList<FirQualifierPart> = mutableListOf()
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 

@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.fir.visitors.*
  * DO NOT MODIFY IT MANUALLY
  */
 
-class FirEmptyControlFlowGraphReference : FirControlFlowGraphReference {
+class FirEmptyControlFlowGraphReference : FirControlFlowGraphReference() {
     override val psi: PsiElement? = null
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}

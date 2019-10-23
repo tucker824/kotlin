@@ -23,7 +23,7 @@ class FirArraySetCallImpl(
     override val psi: PsiElement?,
     override var rValue: FirExpression,
     override val operation: FirOperation
-) : FirArraySetCall, FirModifiableQualifiedAccess, FirAbstractAnnotatedElement {
+) : FirArraySetCall(), FirModifiableQualifiedAccess, FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var safe: Boolean = false
     override var explicitReceiver: FirExpression? = null

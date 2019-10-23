@@ -24,7 +24,7 @@ class FirNamedArgumentExpressionImpl(
     override var expression: FirExpression,
     override val isSpread: Boolean,
     override val name: Name
-) : FirNamedArgumentExpression, FirAbstractAnnotatedElement {
+) : FirNamedArgumentExpression(), FirAbstractAnnotatedElement {
     override val typeRef: FirTypeRef get() = expression.typeRef
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 

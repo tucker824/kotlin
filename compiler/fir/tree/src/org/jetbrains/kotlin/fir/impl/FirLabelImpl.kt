@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirLabelImpl(
     override val psi: PsiElement?,
     override val name: String
-) : FirLabel {
+) : FirLabel() {
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: FirTransformer<D>, data: D): FirLabelImpl {

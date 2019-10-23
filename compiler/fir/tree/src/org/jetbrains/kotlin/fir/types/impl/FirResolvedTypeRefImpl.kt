@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirResolvedTypeRefImpl(
     override val psi: PsiElement?,
     override val type: ConeKotlinType
-) : FirResolvedTypeRef, FirAbstractAnnotatedElement {
+) : FirResolvedTypeRef(), FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {

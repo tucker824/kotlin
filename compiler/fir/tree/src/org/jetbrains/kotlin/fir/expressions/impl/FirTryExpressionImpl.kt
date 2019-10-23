@@ -26,7 +26,7 @@ class FirTryExpressionImpl(
     override val psi: PsiElement?,
     override var tryBlock: FirBlock,
     override var finallyBlock: FirBlock?
-) : FirTryExpression, FirAbstractAnnotatedElement {
+) : FirTryExpression(), FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var calleeReference: FirReference = FirStubReference()

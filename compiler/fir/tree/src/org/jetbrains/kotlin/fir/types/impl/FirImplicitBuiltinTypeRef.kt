@@ -22,7 +22,7 @@ sealed class FirImplicitBuiltinTypeRef(
     val id: ClassId,
     typeArguments: Array<out ConeKotlinTypeProjection> = emptyArray(),
     isNullable: Boolean = false
-) : FirResolvedTypeRef {
+) : FirResolvedTypeRef() {
     override val annotations: List<FirAnnotationCall>
         get() = emptyList()
 

@@ -5,8 +5,9 @@
 
 package org.jetbrains.kotlin.fir.declarations
 
-import org.jetbrains.kotlin.fir.declarations.impl.FirClassImpl
+import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.declarations.impl.FirEnumEntryImpl
+import org.jetbrains.kotlin.fir.declarations.impl.FirModifiableRegularClass
 import org.jetbrains.kotlin.fir.declarations.impl.FirTypeParameterImpl
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.coneTypeSafe
@@ -40,14 +41,14 @@ inline val FirMemberDeclaration.isLateInit: Boolean get() = status.isLateInit
 inline val FirPropertyAccessor.modality get() = status.modality
 inline val FirPropertyAccessor.visibility get() = status.visibility
 
-fun FirClassImpl.addDeclaration(declaration: FirDeclaration) {
+fun FirModifiableRegularClass.addDeclaration(declaration: FirDeclaration) {
     declarations += declaration
     if (companionObject == null && declaration is FirRegularClass && declaration.isCompanion) {
         companionObject = declaration
     }
 }
 
-fun FirClassImpl.addDeclarations(declarations: Collection<FirDeclaration>) {
+fun FirModifiableRegularClass.addDeclarations(declarations: Collection<FirDeclaration>) {
     declarations.forEach(this::addDeclaration)
 }
 
@@ -60,3 +61,8 @@ val FirTypeAlias.expandedConeType: ConeClassLikeType? get() = expandedTypeRef.co
 val FirRegularClass.classId get() = symbol.classId
 
 val FirClass.superConeTypes get() = superTypeRefs.mapNotNull { it.coneTypeSafe<ConeClassLikeType>() }
+
+fun FirRegularClass.collectEnumEntries(): Collection<FirEnumEntry> {
+    assert(classKind == ClassKind.ENUM_CLASS)
+    return declarations.filterIsInstance<FirEnumEntry>()
+}

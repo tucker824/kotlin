@@ -25,7 +25,7 @@ class FirDelegatedConstructorCallImpl(
     override val psi: PsiElement?,
     override var constructedTypeRef: FirTypeRef,
     override val isThis: Boolean
-) : FirDelegatedConstructorCall, FirCallWithArgumentList, FirAbstractAnnotatedElement {
+) : FirDelegatedConstructorCall(), FirCallWithArgumentList, FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val arguments: MutableList<FirExpression> = mutableListOf()
     override val isSuper: Boolean get() = !isThis

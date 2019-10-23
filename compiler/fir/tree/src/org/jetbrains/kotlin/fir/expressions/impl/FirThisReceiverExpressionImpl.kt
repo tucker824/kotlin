@@ -23,7 +23,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirThisReceiverExpressionImpl(
     override val psi: PsiElement?,
     override var calleeReference: FirThisReference
-) : FirThisReceiverExpression, FirModifiableQualifiedAccess, FirAbstractAnnotatedElement {
+) : FirThisReceiverExpression(), FirModifiableQualifiedAccess, FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var safe: Boolean = false

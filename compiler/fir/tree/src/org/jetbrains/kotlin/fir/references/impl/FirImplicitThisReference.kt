@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirImplicitThisReference(
     override val boundSymbol: AbstractFirBasedSymbol<*>?
-) : FirThisReference {
+) : FirThisReference() {
     override val psi: PsiElement? = null
     override val labelName: String? get() = null
 

@@ -42,7 +42,7 @@ class FirPropertyImpl(
     override val symbol: FirPropertySymbol,
     override val isLocal: Boolean,
     override var status: FirDeclarationStatus
-) : FirProperty, FirModifiableVariable<FirProperty>, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
+) : FirProperty(), FirModifiableVariable<FirProperty>, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = if (isLocal) FirResolvePhase.DECLARATIONS else FirResolvePhase.RAW_FIR
     override val delegateFieldSymbol: FirDelegateFieldSymbol<FirProperty>? = delegate?.let { FirDelegateFieldSymbol(symbol.callableId) }
     override val isVal: Boolean get() = !isVar

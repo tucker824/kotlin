@@ -220,6 +220,10 @@ object NodeConfigurator : AbstractFieldConfigurator() {
             +superTypeRefs(withReplace = true)
         }
 
+        sealedClass.configure {
+            +fieldList("inheritors", classIdType, withReplace = true)
+        }
+
         typeAlias.configure {
             parentArg(classLikeDeclaration, "F", typeAlias)
             +symbol("FirTypeAliasSymbol")
@@ -288,6 +292,10 @@ object NodeConfigurator : AbstractFieldConfigurator() {
                 "expect", "actual", "override", "operator", "infix", "inline", "tailRec",
                 "external", "const", "lateInit", "inner", "companion", "data", "suspend", "static"
             )
+        }
+
+        resolvedDeclarationStatus.configure {
+            shouldBeAnInterface()
         }
 
         constructor.configure {
@@ -496,6 +504,7 @@ object NodeConfigurator : AbstractFieldConfigurator() {
             +field("subject", expression, nullable = true).withTransform()
             +field("subjectVariable", variable.withArgs("F" to "*"), nullable = true)
             +fieldList("branches", whenBranch).withTransform()
+            +booleanField("isExhaustive", withReplace = true)
             needTransformOtherChildren()
         }
 

@@ -34,7 +34,7 @@ open class FirValueParameterImpl(
     override val isCrossinline: Boolean,
     override val isNoinline: Boolean,
     override val isVararg: Boolean
-) : FirValueParameter, FirModifiableVariable<FirValueParameter>, FirAbstractAnnotatedElement {
+) : FirValueParameter(), FirModifiableVariable<FirValueParameter>, FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override var receiverTypeRef: FirTypeRef? = null
     override var initializer: FirExpression? = null

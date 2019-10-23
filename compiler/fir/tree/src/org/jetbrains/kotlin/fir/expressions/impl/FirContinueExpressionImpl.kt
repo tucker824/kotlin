@@ -22,7 +22,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirContinueExpressionImpl(
     override val psi: PsiElement?
-) : FirContinueExpression, FirAbstractLoopJump, FirAbstractAnnotatedElement {
+) : FirContinueExpression(), FirAbstractLoopJump, FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitNothingTypeRef(psi)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override lateinit var target: FirTarget<FirLoop>

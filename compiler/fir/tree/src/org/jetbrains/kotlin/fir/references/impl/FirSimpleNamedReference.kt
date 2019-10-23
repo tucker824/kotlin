@@ -20,7 +20,7 @@ open class FirSimpleNamedReference(
     override val psi: PsiElement?,
     override val name: Name,
     override val candidateSymbol: AbstractFirBasedSymbol<*>?
-) : FirNamedReference {
+) : FirNamedReference() {
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: FirTransformer<D>, data: D): FirSimpleNamedReference {

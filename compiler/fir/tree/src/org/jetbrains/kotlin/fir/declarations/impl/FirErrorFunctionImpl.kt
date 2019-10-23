@@ -31,7 +31,7 @@ class FirErrorFunctionImpl(
     override val session: FirSession,
     override val reason: String,
     override val symbol: FirErrorFunctionSymbol
-) : FirErrorFunction, FirAbstractAnnotatedElement {
+) : FirErrorFunction(), FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var returnTypeRef: FirTypeRef = FirErrorTypeRefImpl(null, reason)

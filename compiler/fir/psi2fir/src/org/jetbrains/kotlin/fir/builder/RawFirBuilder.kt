@@ -24,7 +24,6 @@ import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.FirTypeProjection
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.types.impl.*
-import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
@@ -475,14 +474,25 @@ class RawFirBuilder(session: FirSession, val stubMode: Boolean) : BaseFirBuilder
                     isData = (classOrObject as? KtClass)?.isData() == true
                     isInline = classOrObject.hasModifier(INLINE_KEYWORD)
                 }
-                val firClass = FirClassImpl(
-                    classOrObject,
-                    session,
-                    classOrObject.nameAsSafeName,
-                    status,
-                    classKind,
-                    FirClassSymbol(context.currentClassId)
-                )
+                val firClass = if (status.modality == Modality.SEALED) {
+                    FirSealedClassImpl(
+                        classOrObject,
+                        session,
+                        classOrObject.nameAsSafeName,
+                        status,
+                        classKind,
+                        FirClassSymbol(context.currentClassId)
+                    )
+                } else {
+                    FirClassImpl(
+                        classOrObject,
+                        session,
+                        classOrObject.nameAsSafeName,
+                        status,
+                        classKind,
+                        FirClassSymbol(context.currentClassId)
+                    )
+                }
                 classOrObject.extractAnnotationsTo(firClass)
                 classOrObject.extractTypeParametersTo(firClass)
                 val delegatedSelfType = classOrObject.toDelegatedSelfType(firClass)
@@ -953,10 +963,11 @@ class RawFirBuilder(session: FirSession, val stubMode: Boolean) : BaseFirBuilder
                 val firCondition = condition.toFirExpression("If statement should have condition")
                 val trueBranch = expression.then.toFirBlock()
                 branches += FirWhenBranchImpl(condition, firCondition, trueBranch)
-                val elseBranch = expression.`else`.toFirBlock()
-                branches += FirWhenBranchImpl(
-                    null, FirElseIfTrueCondition(null), elseBranch
-                )
+                expression.`else`?.let {
+                    branches += FirWhenBranchImpl(
+                        null, FirElseIfTrueCondition(null), it.toFirBlock()
+                    )
+                }
             }
         }
 
@@ -1017,9 +1028,9 @@ class RawFirBuilder(session: FirSession, val stubMode: Boolean) : BaseFirBuilder
                         FirWhenBranchImpl(entry, FirElseIfTrueCondition(null), branch)
                     }
                 }
-                if (!thereIsElseBranch) {
-                    branches += FirWhenBranchImpl(null, FirElseIfTrueCondition(null), FirEmptyExpressionBlock())
-                }
+//                if (!thereIsElseBranch) {
+//                    branches += FirWhenBranchImpl(null, FirElseIfTrueCondition(null), FirEmptyExpressionBlock())
+//                }
             }
         }
 

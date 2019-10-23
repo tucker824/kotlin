@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirExplicitThisReference(
     override val psi: PsiElement?,
     override val labelName: String?
-) : FirThisReference {
+) : FirThisReference() {
     override var boundSymbol: AbstractFirBasedSymbol<*>? = null
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}

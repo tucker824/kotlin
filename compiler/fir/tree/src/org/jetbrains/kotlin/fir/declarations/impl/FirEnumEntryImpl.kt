@@ -35,7 +35,7 @@ class FirEnumEntryImpl(
     override val session: FirSession,
     override val name: Name,
     override val symbol: FirClassSymbol
-) : FirEnumEntry, FirModifiableClass, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
+) : FirEnumEntry(), FirModifiableClass, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val typeParameters: MutableList<FirTypeParameter> = mutableListOf()

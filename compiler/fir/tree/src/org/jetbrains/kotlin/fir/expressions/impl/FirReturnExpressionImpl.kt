@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirReturnExpressionImpl(
     override val psi: PsiElement?,
     override var result: FirExpression
-) : FirReturnExpression, FirAbstractAnnotatedElement {
+) : FirReturnExpression(), FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitNothingTypeRef(psi)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override lateinit var target: FirTarget<FirFunction<*>>

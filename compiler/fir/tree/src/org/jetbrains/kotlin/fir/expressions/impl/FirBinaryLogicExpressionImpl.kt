@@ -25,7 +25,7 @@ class FirBinaryLogicExpressionImpl(
     override var leftOperand: FirExpression,
     override var rightOperand: FirExpression,
     override val kind: LogicOperationKind
-) : FirBinaryLogicExpression, FirAbstractAnnotatedElement {
+) : FirBinaryLogicExpression(), FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 

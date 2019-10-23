@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.fir.visitors.*
  * DO NOT MODIFY IT MANUALLY
  */
 
-class FirEmptyExpressionBlock : FirBlock, FirAbstractAnnotatedElement {
+class FirEmptyExpressionBlock : FirBlock(), FirAbstractAnnotatedElement {
     override val psi: PsiElement? = null
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val statements: MutableList<FirStatement> = mutableListOf()

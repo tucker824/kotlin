@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirWhenSubjectExpressionImpl(
     override val psi: PsiElement?,
     override val whenSubject: FirWhenSubject
-) : FirWhenSubjectExpression, FirAbstractAnnotatedElement {
+) : FirWhenSubjectExpression(), FirAbstractAnnotatedElement {
     override val typeRef: FirTypeRef get() = whenSubject.whenExpression.subject!!.typeRef
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 

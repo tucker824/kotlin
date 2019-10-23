@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirOperatorCallImpl(
     override val psi: PsiElement?,
     override val operation: FirOperation
-) : FirOperatorCall, FirCallWithArgumentList, FirAbstractAnnotatedElement {
+) : FirOperatorCall(), FirCallWithArgumentList, FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = if (operation in FirOperation.BOOLEANS) {
         FirImplicitBooleanTypeRef(null)
     } else {

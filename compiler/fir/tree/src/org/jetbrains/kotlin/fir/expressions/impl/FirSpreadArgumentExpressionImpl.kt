@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirSpreadArgumentExpressionImpl(
     override val psi: PsiElement?,
     override var expression: FirExpression
-) : FirSpreadArgumentExpression, FirAbstractAnnotatedElement {
+) : FirSpreadArgumentExpression(), FirAbstractAnnotatedElement {
     override val typeRef: FirTypeRef get() = expression.typeRef
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val isSpread: Boolean get() = true

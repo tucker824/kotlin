@@ -108,7 +108,6 @@ open class DefaultArgumentStubGenerator(
 
                     val expressionBody = valueParameter.defaultValue!!
                     expressionBody.patchDeclarationParents(newIrFunction)
-
                     expressionBody.transformChildrenVoid(object : IrElementTransformerVoid() {
                         override fun visitGetValue(expression: IrGetValue): IrExpression {
                             log { "GetValue: ${expression.symbol.owner}" }
@@ -117,13 +116,7 @@ open class DefaultArgumentStubGenerator(
                         }
                     })
 
-                    val argument = irIfThenElse(
-                        type = parameter.type,
-                        condition = condition,
-                        thenPart = expressionBody.expression,
-                        elsePart = irGet(parameter)
-                    )
-                    createTmpVariable(argument, nameHint = parameter.name.asString())
+                    selectArgumentOrDefault(condition, parameter, expressionBody.expression)
                 } else {
                     parameter
                 }
@@ -155,6 +148,15 @@ open class DefaultArgumentStubGenerator(
             }
         }
         return listOf(irFunction, newIrFunction)
+    }
+
+    protected open fun IrBlockBodyBuilder.selectArgumentOrDefault(
+        shouldUseDefault: IrExpression,
+        parameter: IrValueParameter,
+        default: IrExpression
+    ): IrValueDeclaration {
+        val value = irIfThenElse(parameter.type, shouldUseDefault, default, irGet(parameter))
+        return createTmpVariable(value, nameHint = parameter.name.asString())
     }
 
     private fun IrBlockBodyBuilder.dispatchToImplementation(
@@ -396,17 +398,8 @@ open class DefaultParameterInjector(
             nullConst(startOffset, endOffset, irParameter.type)
         }
 
-    protected open fun nullConst(startOffset: Int, endOffset: Int, type: IrType): IrExpression = when {
-        type.isFloat() -> IrConstImpl.float(startOffset, endOffset, type, 0.0F)
-        type.isDouble() -> IrConstImpl.double(startOffset, endOffset, type, 0.0)
-        type.isBoolean() -> IrConstImpl.boolean(startOffset, endOffset, type, false)
-        type.isByte() -> IrConstImpl.byte(startOffset, endOffset, type, 0)
-        type.isChar() -> IrConstImpl.char(startOffset, endOffset, type, 0.toChar())
-        type.isShort() -> IrConstImpl.short(startOffset, endOffset, type, 0)
-        type.isInt() -> IrConstImpl.int(startOffset, endOffset, type, 0)
-        type.isLong() -> IrConstImpl.long(startOffset, endOffset, type, 0)
-        else -> IrConstImpl.constNull(startOffset, endOffset, context.irBuiltIns.nothingNType)
-    }
+    protected open fun nullConst(startOffset: Int, endOffset: Int, type: IrType): IrExpression =
+        IrConstImpl.defaultValueForType(startOffset, endOffset, type)
 
     private fun log(msg: () -> String) = context.log { "DEFAULT-INJECTOR: ${msg()}" }
 }
@@ -502,9 +495,10 @@ private fun buildFunctionDeclaration(irFunction: IrFunction, origin: IrDeclarati
                 irFunction.name,
                 irFunction.visibility,
                 irFunction.returnType,
-                irFunction.isInline,
-                false,
-                false
+                isInline = irFunction.isInline,
+                isExternal = false,
+                isPrimary = false,
+                isExpect = false
             ).also {
                 descriptor.bind(it)
                 it.parent = irFunction.parent
@@ -525,10 +519,11 @@ private fun buildFunctionDeclaration(irFunction: IrFunction, origin: IrDeclarati
                 irFunction.visibility,
                 Modality.FINAL,
                 irFunction.returnType,
-                irFunction.isInline,
-                false,
-                false,
-                irFunction.isSuspend
+                isInline = irFunction.isInline,
+                isExternal = false,
+                isTailrec = false,
+                isSuspend = irFunction.isSuspend,
+                isExpect = irFunction.isExpect
             ).also {
                 descriptor.bind(it)
                 it.parent = irFunction.parent
@@ -560,8 +555,8 @@ private fun IrFunction.valueParameter(index: Int, name: Name, type: IrType): IrV
         index,
         type,
         null,
-        false,
-        false
+        isCrossinline = false,
+        isNoinline = false
     ).also {
         parameterDescriptor.bind(it)
         it.parent = this

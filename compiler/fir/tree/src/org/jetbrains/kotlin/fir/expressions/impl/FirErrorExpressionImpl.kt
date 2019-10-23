@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirErrorExpressionImpl(
     override val psi: PsiElement?,
     override val reason: String
-) : FirErrorExpression, FirAbstractAnnotatedElement {
+) : FirErrorExpression(), FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 

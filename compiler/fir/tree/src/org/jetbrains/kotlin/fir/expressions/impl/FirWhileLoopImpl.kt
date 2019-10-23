@@ -22,7 +22,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirWhileLoopImpl(
     override val psi: PsiElement?,
     override var condition: FirExpression
-) : FirWhileLoop, FirAbstractLoop, FirAbstractAnnotatedElement {
+) : FirWhileLoop(), FirAbstractLoop, FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var label: FirLabel? = null
     override lateinit var block: FirBlock

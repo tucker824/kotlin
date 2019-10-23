@@ -21,7 +21,7 @@ class FirBackingFieldReferenceImpl(
     override val psi: PsiElement?,
     override val candidateSymbol: AbstractFirBasedSymbol<*>?,
     override val resolvedSymbol: FirBackingFieldSymbol
-) : FirBackingFieldReference {
+) : FirBackingFieldReference() {
     override val name: Name get() = Name.identifier("\$field")
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}

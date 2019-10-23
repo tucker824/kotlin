@@ -20,7 +20,7 @@ class FirTypeProjectionWithVarianceImpl(
     override val psi: PsiElement?,
     override var typeRef: FirTypeRef,
     override val variance: Variance
-) : FirTypeProjectionWithVariance {
+) : FirTypeProjectionWithVariance() {
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
         typeRef.accept(visitor, data)
     }

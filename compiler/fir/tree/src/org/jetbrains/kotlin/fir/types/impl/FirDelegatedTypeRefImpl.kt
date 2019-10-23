@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirDelegatedTypeRefImpl(
     override var delegate: FirExpression?,
     override var typeRef: FirTypeRef
-) : FirDelegatedTypeRef {
+) : FirDelegatedTypeRef() {
     override val psi: PsiElement? get() = typeRef.psi
     override val annotations: List<FirAnnotationCall> get() = typeRef.annotations
 

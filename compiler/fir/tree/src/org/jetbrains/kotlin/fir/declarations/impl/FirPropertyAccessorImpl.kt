@@ -34,7 +34,7 @@ open class FirPropertyAccessorImpl(
     override val symbol: FirPropertyAccessorSymbol,
     override val isGetter: Boolean,
     override var status: FirDeclarationStatus
-) : FirPropertyAccessor, FirModifiableFunction<FirPropertyAccessor>, FirAbstractAnnotatedElement {
+) : FirPropertyAccessor(), FirModifiableFunction<FirPropertyAccessor>, FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override var receiverTypeRef: FirTypeRef? = null
     override var controlFlowGraphReference: FirControlFlowGraphReference = FirEmptyControlFlowGraphReference()

@@ -36,7 +36,7 @@ open class FirConstructorImpl(
     override var receiverTypeRef: FirTypeRef?,
     override var status: FirDeclarationStatus,
     override val symbol: FirConstructorSymbol
-) : FirConstructor, FirModifiableConstructor, FirAbstractAnnotatedElement {
+) : FirConstructor, FirModifiableConstructor(), FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override var controlFlowGraphReference: FirControlFlowGraphReference = FirEmptyControlFlowGraphReference()
     override val typeParameters: MutableList<FirTypeParameter> = mutableListOf()

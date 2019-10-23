@@ -23,7 +23,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirFunctionCallImpl(
     override val psi: PsiElement?
-) : FirFunctionCall, FirModifiableQualifiedAccess, FirCallWithArgumentList, FirAbstractAnnotatedElement {
+) : FirFunctionCall(), FirModifiableQualifiedAccess, FirCallWithArgumentList, FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var safe: Boolean = false

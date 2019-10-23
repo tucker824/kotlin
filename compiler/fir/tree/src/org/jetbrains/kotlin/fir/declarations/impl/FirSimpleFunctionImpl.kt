@@ -36,7 +36,7 @@ open class FirSimpleFunctionImpl(
     override val name: Name,
     override var status: FirDeclarationStatus,
     override val symbol: FirFunctionSymbol<FirSimpleFunction>
-) : FirSimpleFunction, FirModifiableFunction<FirSimpleFunction>, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
+) : FirSimpleFunction(), FirModifiableFunction<FirSimpleFunction>, FirModifiableTypeParametersOwner, FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override var controlFlowGraphReference: FirControlFlowGraphReference = FirEmptyControlFlowGraphReference()
     override val typeParameters: MutableList<FirTypeParameter> = mutableListOf()

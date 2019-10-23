@@ -22,7 +22,7 @@ class FirAnnotationCallImpl(
     override val psi: PsiElement?,
     override val useSiteTarget: AnnotationUseSiteTarget?,
     override var annotationTypeRef: FirTypeRef
-) : FirAnnotationCall, FirCallWithArgumentList, FirAbstractAnnotatedElement {
+) : FirAnnotationCall(), FirCallWithArgumentList, FirAbstractAnnotatedElement {
     override val typeRef: FirTypeRef get() = annotationTypeRef
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val arguments: MutableList<FirExpression> = mutableListOf()

@@ -27,7 +27,7 @@ class FirComponentCallImpl(
     override val psi: PsiElement?,
     override var explicitReceiver: FirExpression,
     override val componentIndex: Int
-) : FirComponentCall, FirCallWithArgumentList, FirAbstractAnnotatedElement {
+) : FirComponentCall(), FirCallWithArgumentList, FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val safe: Boolean get() = false

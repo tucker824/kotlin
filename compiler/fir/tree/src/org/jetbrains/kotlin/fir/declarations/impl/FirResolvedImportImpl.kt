@@ -22,7 +22,7 @@ class FirResolvedImportImpl(
     override var delegate: FirImport,
     override val packageFqName: FqName,
     override val relativeClassName: FqName?
-) : FirResolvedImport {
+) : FirResolvedImport() {
     override val psi: PsiElement? get() = delegate.psi
     override val importedFqName: FqName? get() = delegate.importedFqName
     override val isAllUnder: Boolean get() = delegate.isAllUnder

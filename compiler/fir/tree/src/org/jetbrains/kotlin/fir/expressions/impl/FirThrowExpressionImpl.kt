@@ -22,7 +22,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirThrowExpressionImpl(
     override val psi: PsiElement?,
     override var exception: FirExpression
-) : FirThrowExpression, FirAbstractAnnotatedElement {
+) : FirThrowExpression(), FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitNothingTypeRef(psi)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 

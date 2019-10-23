@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirImplicitTypeRefImpl(
     override val psi: PsiElement?
-) : FirImplicitTypeRef {
+) : FirImplicitTypeRef() {
     override val annotations: List<FirAnnotationCall> get() = emptyList()
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {

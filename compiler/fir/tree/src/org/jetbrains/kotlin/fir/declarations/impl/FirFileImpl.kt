@@ -26,7 +26,7 @@ class FirFileImpl(
     override val session: FirSession,
     override val name: String,
     override val packageFqName: FqName
-) : FirFile, FirAbstractAnnotatedElement {
+) : FirFile(), FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override val imports: MutableList<FirImport> = mutableListOf()

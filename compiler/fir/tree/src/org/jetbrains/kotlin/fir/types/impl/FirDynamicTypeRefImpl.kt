@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirDynamicTypeRefImpl(
     override val psi: PsiElement?,
     override val isMarkedNullable: Boolean
-) : FirDynamicTypeRef, FirAbstractAnnotatedElement {
+) : FirDynamicTypeRef(), FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {

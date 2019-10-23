@@ -49,8 +49,7 @@ open class FunctionCodegen(
         val flags = calculateMethodFlags(functionView.isStatic)
         var methodVisitor = createMethod(flags, signature)
 
-        val hasSyntheticFlag = flags.and(Opcodes.ACC_SYNTHETIC) != 0
-        if (state.generateParametersMetadata && !hasSyntheticFlag) {
+        if (state.generateParametersMetadata && flags.and(Opcodes.ACC_SYNTHETIC) == 0) {
             generateParameterNames(irFunction, methodVisitor, signature, state)
         }
 
@@ -61,15 +60,11 @@ open class FunctionCodegen(
             )
         }
 
-        // FIXME: The following test is a workaround for a bug in anonymous object regeneration.
-        //        We currently need to avoid parameter annotations on the (synthetic) constructors of inlined anonymous objects,
-        //        since otherwise anonymous object regeneration can fail with an ArrayIndexOutOfBounds exception if the number
-        //        or arguments to the constructor changes.
-        if (!hasSyntheticFlag ||
-            irFunction.origin == JvmLoweredDeclarationOrigin.SYNTHETIC_METHOD_FOR_PROPERTY_ANNOTATIONS ||
-            //TODO: investigate this case: annotation here is generated twice in lowered function and in interface method overload
-            irFunction.origin == JvmLoweredDeclarationOrigin.GENERATED_SAM_IMPLEMENTATION
-        ) {
+        // Since the only arguments to anonymous object constructors are captured variables and complex
+        // super constructor arguments, there shouldn't be any annotations on them other than @NonNull,
+        // and those are meaningless on synthetic parameters. (Also, the inliner cannot handle them and
+        // will throw an exception if we generate any.)
+        if (irFunction !is IrConstructor || !irFunction.parentAsClass.isAnonymousObject) {
             generateParameterAnnotations(functionView, methodVisitor, signature, classCodegen, context)
         }
 
@@ -103,9 +98,6 @@ open class FunctionCodegen(
 
         return signature
     }
-
-    private fun IrFunction.isKnownToBeTailCall(): Boolean =
-        origin == IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER || origin == JvmLoweredDeclarationOrigin.SYNTHETIC_ACCESSOR
 
     private fun calculateMethodFlags(isStatic: Boolean): Int {
         if (irFunction.origin == IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER) {

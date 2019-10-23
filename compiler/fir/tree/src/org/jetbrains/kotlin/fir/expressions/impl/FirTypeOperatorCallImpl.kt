@@ -24,7 +24,7 @@ class FirTypeOperatorCallImpl(
     override val psi: PsiElement?,
     override val operation: FirOperation,
     override var conversionTypeRef: FirTypeRef
-) : FirTypeOperatorCall, FirCallWithArgumentList, FirAbstractAnnotatedElement {
+) : FirTypeOperatorCall(), FirCallWithArgumentList, FirAbstractAnnotatedElement {
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val arguments: MutableList<FirExpression> = mutableListOf()

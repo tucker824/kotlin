@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.backend.jvm.codegen
 import org.jetbrains.kotlin.backend.common.descriptors.WrappedSimpleFunctionDescriptor
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineParameter
+import org.jetbrains.kotlin.backend.jvm.ir.isLambda
 import org.jetbrains.kotlin.codegen.IrExpressionLambda
 import org.jetbrains.kotlin.codegen.JvmKotlinType
 import org.jetbrains.kotlin.codegen.StackValue
@@ -40,7 +41,13 @@ class IrInlineCodegen(
     codegen, state, function, methodOwner, signature, typeParameterMappings, sourceCompiler, reifiedTypeInliner
 ), IrCallGenerator {
     override fun generateAssertFieldIfNeeded(info: RootInliningContext) {
-        // TODO: JVM assertions are not implemented yet in IR backend
+        if (info.generateAssertField && (sourceCompiler as IrSourceCompilerForInline).isPrimaryCopy) {
+            codegen.classCodegen.generateAssertFieldIfNeeded()?.let {
+                // Generating <clinit> right now, so no longer can insert the initializer into it.
+                // Instead, ask ExpressionCodegen to generate the code for it directly.
+                it.accept(codegen, BlockInfo()).discard()
+            }
+        }
     }
 
     override fun putClosureParametersOnStack(next: LambdaInfo, functionReferenceReceiver: StackValue?) {
@@ -197,7 +204,7 @@ fun isInlineIrExpression(argumentExpression: IrExpression) =
         else -> false
     }
 
-fun IrBlock.isInlineIrBlock(): Boolean = origin == IrStatementOrigin.LAMBDA || origin == IrStatementOrigin.ANONYMOUS_FUNCTION
+fun IrBlock.isInlineIrBlock(): Boolean = origin.isLambda
 
 fun IrFunction.isInlineFunctionCall(context: JvmBackendContext) =
     (!context.state.isInlineDisabled || typeParameters.any { it.isReified }) && isInline

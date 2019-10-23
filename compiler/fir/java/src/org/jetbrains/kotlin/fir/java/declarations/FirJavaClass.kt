@@ -9,6 +9,7 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibility
+import org.jetbrains.kotlin.fir.FirPureAbstractElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
@@ -34,7 +35,7 @@ class FirJavaClass internal constructor(
     isTopLevel: Boolean,
     isStatic: Boolean,
     internal val javaTypeParameterStack: JavaTypeParameterStack
-) : FirRegularClass, FirModifiableClass {
+) : FirPureAbstractElement(), FirRegularClass, FirModifiableClass {
     override var status: FirDeclarationStatusImpl = FirDeclarationStatusImpl(visibility, modality)
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val typeParameters: MutableList<FirTypeParameter> = mutableListOf()
@@ -65,6 +66,10 @@ class FirJavaClass internal constructor(
 
     override fun replaceSupertypesComputationStatus(newSupertypesComputationStatus: SupertypesComputationStatus) {
         supertypesComputationStatus = newSupertypesComputationStatus
+    }
+
+    override fun replaceResolvePhase(newResolvePhase: FirResolvePhase) {
+        resolvePhase = newResolvePhase
     }
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {

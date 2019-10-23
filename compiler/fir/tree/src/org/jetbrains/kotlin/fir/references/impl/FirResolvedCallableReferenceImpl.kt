@@ -20,7 +20,7 @@ class FirResolvedCallableReferenceImpl(
     override val psi: PsiElement?,
     override val name: Name,
     override val resolvedSymbol: AbstractFirBasedSymbol<*>
-) : FirResolvedCallableReference {
+) : FirResolvedCallableReference() {
     override val candidateSymbol: AbstractFirBasedSymbol<*>? get() = null
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}

@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirErrorNamedReferenceImpl(
     override val psi: PsiElement?,
     override val errorReason: String
-) : FirErrorNamedReference {
+) : FirErrorNamedReference() {
     override val name: Name = Name.special("<$errorReason>")
     override val candidateSymbol: AbstractFirBasedSymbol<*>? get() = null
 

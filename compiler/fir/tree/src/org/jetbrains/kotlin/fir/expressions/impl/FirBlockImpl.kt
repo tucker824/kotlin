@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirBlockImpl(
     override val psi: PsiElement?
-) : FirBlock, FirAbstractAnnotatedElement {
+) : FirBlock(), FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val statements: MutableList<FirStatement> = mutableListOf()
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)

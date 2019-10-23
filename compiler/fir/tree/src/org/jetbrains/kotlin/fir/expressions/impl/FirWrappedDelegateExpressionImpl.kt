@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirWrappedDelegateExpressionImpl(
     override val psi: PsiElement?,
     override var expression: FirExpression
-) : FirWrappedDelegateExpression, FirAbstractAnnotatedElement {
+) : FirWrappedDelegateExpression(), FirAbstractAnnotatedElement {
     override val typeRef: FirTypeRef get() = expression.typeRef
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override lateinit var delegateProvider: FirExpression

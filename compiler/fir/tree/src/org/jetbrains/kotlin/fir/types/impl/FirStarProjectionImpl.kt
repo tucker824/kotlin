@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirStarProjectionImpl(
     override val psi: PsiElement?
-) : FirStarProjection {
+) : FirStarProjection() {
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: FirTransformer<D>, data: D): FirStarProjectionImpl {

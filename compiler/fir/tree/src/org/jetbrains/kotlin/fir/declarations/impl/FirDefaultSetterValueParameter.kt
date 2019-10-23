@@ -29,7 +29,7 @@ class FirDefaultSetterValueParameter(
     override val session: FirSession,
     override var returnTypeRef: FirTypeRef,
     override val symbol: FirVariableSymbol<FirValueParameter>
-) : FirValueParameter, FirAbstractAnnotatedElement {
+) : FirValueParameter(), FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override var receiverTypeRef: FirTypeRef? = null
     override val name: Name = Name.identifier("value")

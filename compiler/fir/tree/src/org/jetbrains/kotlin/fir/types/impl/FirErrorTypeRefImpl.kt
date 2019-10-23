@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 class FirErrorTypeRefImpl(
     override val psi: PsiElement?,
     override val reason: String
-) : FirErrorTypeRef, FirAbstractAnnotatedElement {
+) : FirErrorTypeRef(), FirAbstractAnnotatedElement {
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override val type: ConeKotlinType = ConeClassErrorType(reason)
 

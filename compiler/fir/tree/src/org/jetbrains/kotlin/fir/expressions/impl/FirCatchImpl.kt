@@ -20,7 +20,7 @@ class FirCatchImpl(
     override val psi: PsiElement?,
     override var parameter: FirValueParameter,
     override var block: FirBlock
-) : FirCatch {
+) : FirCatch() {
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
         parameter.accept(visitor, data)
         block.accept(visitor, data)

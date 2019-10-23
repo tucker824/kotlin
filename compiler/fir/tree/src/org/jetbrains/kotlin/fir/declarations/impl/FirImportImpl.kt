@@ -21,7 +21,7 @@ class FirImportImpl(
     override val importedFqName: FqName?,
     override val isAllUnder: Boolean,
     override val aliasName: Name?
-) : FirImport {
+) : FirImport() {
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}
 
     override fun <D> transformChildren(transformer: FirTransformer<D>, data: D): FirImportImpl {
