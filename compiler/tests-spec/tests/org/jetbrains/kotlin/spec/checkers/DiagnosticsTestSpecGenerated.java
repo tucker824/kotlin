@@ -1153,6 +1153,16 @@ public class DiagnosticsTestSpecGenerated extends AbstractDiagnosticsTestSpec {
                             runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/11.1.kt");
                         }
 
+                        @TestMetadata("11.2.kt")
+                        public void test11_2() throws Exception {
+                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/11.2.kt");
+                        }
+
+                        @TestMetadata("12.1.kt")
+                        public void test12_1() throws Exception {
+                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/12.1.kt");
+                        }
+
                         @TestMetadata("1.1.kt")
                         public void test1_1() throws Exception {
                             runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/1.1.kt");
@@ -1173,19 +1183,9 @@ public class DiagnosticsTestSpecGenerated extends AbstractDiagnosticsTestSpec {
                             runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/3.2.kt");
                         }
 
-                        @TestMetadata("6.1.kt")
-                        public void test6_1() throws Exception {
-                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/6.1.kt");
-                        }
-
-                        @TestMetadata("9.1.kt")
-                        public void test9_1() throws Exception {
-                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/9.1.kt");
-                        }
-
-                        @TestMetadata("9.2.kt")
-                        public void test9_2() throws Exception {
-                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/9.2.kt");
+                        @TestMetadata("7.1.kt")
+                        public void test7_1() throws Exception {
+                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/neg/7.1.kt");
                         }
 
                         public void testAllFilesPresentInNeg() throws Exception {
@@ -1201,9 +1201,19 @@ public class DiagnosticsTestSpecGenerated extends AbstractDiagnosticsTestSpec {
                             KotlinTestUtils.runTest(this::doTest, TargetBackend.ANY, testDataFilePath);
                         }
 
-                        @TestMetadata("11.1.kt")
-                        public void test11_1() throws Exception {
-                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/11.1.kt");
+                        @TestMetadata("10.1.kt")
+                        public void test10_1() throws Exception {
+                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/10.1.kt");
+                        }
+
+                        @TestMetadata("10.2.kt")
+                        public void test10_2() throws Exception {
+                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/10.2.kt");
+                        }
+
+                        @TestMetadata("12.1.kt")
+                        public void test12_1() throws Exception {
+                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/12.1.kt");
                         }
 
                         @TestMetadata("1.1.kt")
@@ -1236,19 +1246,9 @@ public class DiagnosticsTestSpecGenerated extends AbstractDiagnosticsTestSpec {
                             runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/3.2.kt");
                         }
 
-                        @TestMetadata("6.1.kt")
-                        public void test6_1() throws Exception {
-                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/6.1.kt");
-                        }
-
-                        @TestMetadata("9.1.kt")
-                        public void test9_1() throws Exception {
-                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/9.1.kt");
-                        }
-
-                        @TestMetadata("9.2.kt")
-                        public void test9_2() throws Exception {
-                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/9.2.kt");
+                        @TestMetadata("7.1.kt")
+                        public void test7_1() throws Exception {
+                            runTest("compiler/tests-spec/testData/diagnostics/linked/expressions/when-expression/p-6/pos/7.1.kt");
                         }
 
                         public void testAllFilesPresentInPos() throws Exception {
