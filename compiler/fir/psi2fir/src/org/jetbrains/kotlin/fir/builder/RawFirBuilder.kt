@@ -434,7 +434,7 @@ class RawFirBuilder(session: FirSession, val stubMode: Boolean) : BaseFirBuilder
                     enumEntry,
                     session,
                     enumEntry.nameAsSafeName,
-                    FirClassSymbol(context.currentClassId)
+                    firMayBeLocalClassSymbol(context.currentClassId)
                 )
                 enumEntry.extractAnnotationsTo(firEnumEntry)
                 val delegatedSelfType = enumEntry.toDelegatedSelfType(firEnumEntry)
@@ -481,7 +481,7 @@ class RawFirBuilder(session: FirSession, val stubMode: Boolean) : BaseFirBuilder
                         classOrObject.nameAsSafeName,
                         status,
                         classKind,
-                        FirClassSymbol(context.currentClassId)
+                        firMayBeLocalClassSymbol(context.currentClassId)
                     )
                 } else {
                     FirClassImpl(
@@ -490,7 +490,7 @@ class RawFirBuilder(session: FirSession, val stubMode: Boolean) : BaseFirBuilder
                         classOrObject.nameAsSafeName,
                         status,
                         classKind,
-                        FirClassSymbol(context.currentClassId)
+                        firMayBeLocalClassSymbol(context.currentClassId)
                     )
                 }
                 classOrObject.extractAnnotationsTo(firClass)

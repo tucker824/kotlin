@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.fir.declarations.impl.FirEnumEntryImpl
 import org.jetbrains.kotlin.fir.declarations.impl.FirSealedClassImpl
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirNonLocalClassSymbol
 import org.jetbrains.kotlin.fir.types.impl.ConeClassTypeImpl
 import org.jetbrains.kotlin.fir.types.impl.FirResolvedTypeRefImpl
 import org.jetbrains.kotlin.metadata.ProtoBuf
@@ -119,7 +120,7 @@ fun deserializeClassToSymbol(
                 val enumEntryName = nameResolver.getName(enumEntryProto.name)
                 val enumEntryId = classId.createNestedClassId(enumEntryName)
 
-                val symbol = FirClassSymbol(enumEntryId)
+                val symbol = FirNonLocalClassSymbol(enumEntryId)
                 FirEnumEntryImpl(null, session, enumEntryId.shortClassName, symbol).apply {
                     resolvePhase = FirResolvePhase.DECLARATIONS
                     superTypeRefs += FirResolvedTypeRefImpl(

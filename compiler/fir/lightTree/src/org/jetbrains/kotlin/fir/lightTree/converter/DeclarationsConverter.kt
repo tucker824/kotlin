@@ -379,7 +379,7 @@ class DeclarationsConverter(
                     className,
                     status,
                     classKind,
-                    FirClassSymbol(context.currentClassId)
+                    firMayBeLocalClassSymbol(context.currentClassId)
                 )
             } else {
                 FirClassImpl(
@@ -388,7 +388,7 @@ class DeclarationsConverter(
                     className,
                     status,
                     classKind,
-                    FirClassSymbol(context.currentClassId)
+                    firMayBeLocalClassSymbol(context.currentClassId)
                 )
             }
             firClass.annotations += modifiers.annotations
@@ -514,7 +514,7 @@ class DeclarationsConverter(
                 null,
                 session,
                 enumEntryName,
-                FirClassSymbol(context.currentClassId)
+                firMayBeLocalClassSymbol(context.currentClassId)
             )
             firEnumEntry.annotations += modifiers.annotations
 

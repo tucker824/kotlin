@@ -91,7 +91,7 @@ class FirLibrarySymbolProviderImpl(val session: FirSession) : FirSymbolProvider(
                     return null
                 }
             }
-            return lookup.getOrPut(classId, { FirClassSymbol(classId) }) { symbol ->
+            return lookup.getOrPut(classId, { FirNonLocalClassSymbol(classId) }) { symbol ->
                 if (shouldBeEnumEntry) {
                     FirEnumEntryImpl(null, session, classId.shortClassName, symbol).apply {
                         resolvePhase = FirResolvePhase.DECLARATIONS
@@ -171,7 +171,7 @@ class FirLibrarySymbolProviderImpl(val session: FirSession) : FirSymbolProvider(
                     isData = false
                     isInline = false
                 }
-                FirClassSymbol(this).apply {
+                FirNonLocalClassSymbol(this).apply {
                     FirClassImpl(
                         null,
                         session,
