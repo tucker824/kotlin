@@ -6,23 +6,23 @@
 package org.jetbrains.kotlin.idea.core.script.configuration.cache
 
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import java.io.DataInput
+import java.io.DataOutput
 
 data class CachedConfiguration(
+    val cache: ScriptConfigurationCache,
     val file: VirtualFile,
     val result: ScriptCompilationConfigurationWrapper,
-    val modificationStamp: Long = file.modificationStamp
+    val inputs: Any? = cache.getInputs(file)
 ) {
     val isUpToDate
-        get() = file.modificationStamp == modificationStamp
-
-    companion object {
-        const val OUT_OF_DATE_STAMP = Long.MIN_VALUE
-    }
+        get() = cache.getInputs(file) == inputs
 }
 
 interface ScriptConfigurationCache {
+    fun getInputs(file: VirtualFile): Any
+
     operator fun get(file: VirtualFile): CachedConfiguration?
     operator fun set(file: VirtualFile, configuration: ScriptCompilationConfigurationWrapper)
     fun markOutOfDate(file: VirtualFile)

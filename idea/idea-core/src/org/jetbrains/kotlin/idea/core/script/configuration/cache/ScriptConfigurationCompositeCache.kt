@@ -10,6 +10,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.configuration.AbstractScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.debug
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import java.io.DataInput
+import java.io.DataOutput
 
 /**
  * Configuration may be loaded from [memoryCache] or from [fileAttributeCache], on [memoryCache] miss.
@@ -36,15 +38,16 @@ abstract class ScriptConfigurationCompositeCache(val project: Project) :
         memoryCache.replace(
             file,
             CachedConfiguration(
+                this,
                 file,
                 fromAttributes,
-                CachedConfiguration.OUT_OF_DATE_STAMP // to reload on first request
+                inputs = Any()  // Any not equal to anything
             )
         )
 
         afterLoadFromFs()
 
-        return CachedConfiguration(file, fromAttributes)
+        return CachedConfiguration(this, file, fromAttributes)
     }
 
     protected abstract fun afterLoadFromFs()
@@ -52,10 +55,7 @@ abstract class ScriptConfigurationCompositeCache(val project: Project) :
     override operator fun set(file: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
         memoryCache.replace(
             file,
-            CachedConfiguration(
-                file,
-                configuration
-            )
+            CachedConfiguration(this, file, configuration)
         )
 
         debug(file) { "configuration saved to file attributes: $configuration" }
@@ -64,9 +64,28 @@ abstract class ScriptConfigurationCompositeCache(val project: Project) :
 
     override fun markOutOfDate(file: VirtualFile) {
         memoryCache.update(file) {
-            it?.copy(modificationStamp = CachedConfiguration.OUT_OF_DATE_STAMP)
+            it?.copy(inputs = Any()) // Any not equal to anything
         }
     }
 
     override fun all(): Collection<CachedConfiguration> = memoryCache.getAll().map { it.value }
+
+//    interface Inputs {
+//        fun read(data: DataInput)
+//        fun write(data: DataOutput)
+//    }
+//
+//    class UnknownInputs : Inputs {
+//        override fun read(data: DataInput) {
+//            data.readLong()
+//        }
+//
+//        override fun write(data: DataOutput) {
+//            data.writeLong()
+//        }
+//    }
+//
+//    class TimestampInputs {
+//
+//    }
 }

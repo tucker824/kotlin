@@ -104,6 +104,16 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
 
     override fun createCache(): ScriptConfigurationCache {
         return object : ScriptConfigurationCompositeCache(project) {
+            override fun getInputs(file: VirtualFile): Any {
+                if (isGradleKotlinScript(file)) {
+                    val stamp = gradleScriptConfigurationStamp(project, file)
+                    if (stamp != null) {
+                        return stamp
+                    }
+                }
+                return file.modificationStamp
+            }
+
             override fun afterLoadFromFs() {
                 // each loading from fileAttributeCache should clear roots cache,
                 // since ScriptConfigurationCompositeCache.all() will return only memory cached configuration
@@ -167,6 +177,14 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
         if (!shouldLoad) return
 
         val virtualFile = file.originalFile.virtualFile ?: return
+
+        /// Gradle
+        if (!autoReloadEnabled) {
+            //if (isGradleKotlinScript(virtualFile)) return
+        } else {
+            // todo: run script models import
+        }
+        /// /Gradle
 
         if (!ScriptDefinitionsManager.getInstance(project).isReady()) return
         val scriptDefinition = file.findScriptDefinition() ?: return
@@ -257,7 +275,7 @@ internal class DefaultScriptConfigurationManager(project: Project) : AbstractScr
                             "configuration changed, notification is shown: old = $oldConfiguration, new = $newConfiguration"
                         }
                         synchronized(notApplied) {
-                            notApplied[file] = CachedConfiguration(file, newConfiguration)
+                            notApplied[file] = CachedConfiguration(cache, file, newConfiguration)
                         }
                         file.addScriptDependenciesNotificationPanel(
                             newConfiguration, project,

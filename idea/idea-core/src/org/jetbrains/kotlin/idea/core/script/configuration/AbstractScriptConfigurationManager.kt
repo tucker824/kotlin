@@ -56,7 +56,7 @@ internal abstract class AbstractScriptConfigurationManager(
     protected val rootsIndexer = ScriptClassRootsIndexer(project)
 
     @Suppress("LeakingThis")
-    private val cache: ScriptConfigurationCache = createCache()
+    protected val cache: ScriptConfigurationCache = createCache()
 
     protected abstract fun createCache(): ScriptConfigurationCache
 
