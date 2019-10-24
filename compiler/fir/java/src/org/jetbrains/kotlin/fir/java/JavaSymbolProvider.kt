@@ -159,7 +159,7 @@ class JavaSymbolProvider(
             if (foundClass == null || foundClass.annotations.any { it.classId?.asSingleFqName() == JvmAnnotationNames.METADATA_FQ_NAME }) {
                 null to null
             } else {
-                FirNonLocalClassSymbol(classId) to foundClass
+                FirClassSymbol(classId) to foundClass
             }
         }) { firSymbol, foundClass ->
             foundClass?.let { javaClass ->

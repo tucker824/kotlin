@@ -24,20 +24,13 @@ sealed class FirClassLikeSymbol<D>(
     override fun hashCode(): Int = fir.hashCode()
 }
 
-sealed class FirClassSymbol(classId: ClassId) : FirClassLikeSymbol<FirRegularClass>(classId)
-
-class FirNonLocalClassSymbol(classId: ClassId) : FirClassSymbol(classId) {
-    override fun toLookupTag(): ConeClassLikeLookupTag = ConeClassLikeLookupTagImpl(classId)
-}
-
-class FirLocalClassSymbol(classId: ClassId) : FirClassSymbol(classId) {
-    private val lookupTag = ConeClassLookupTagWithFixedSymbol(classId, this)
+class FirClassSymbol(classId: ClassId) : FirClassLikeSymbol<FirRegularClass>(classId) {
+    private val lookupTag =
+        if (classId.isLocal) ConeClassLookupTagWithFixedSymbol(classId, this)
+        else ConeClassLikeLookupTagImpl(classId)
 
     override fun toLookupTag(): ConeClassLikeLookupTag = lookupTag
 }
-
-fun firMayBeLocalClassSymbol(classId: ClassId): FirClassSymbol =
-    if (classId.isLocal) FirLocalClassSymbol(classId) else FirNonLocalClassSymbol(classId)
 
 class FirTypeAliasSymbol(classId: ClassId) : FirClassLikeSymbol<FirTypeAlias>(classId) {
     override fun toLookupTag(): TypeAliasLookupTagImpl = TypeAliasLookupTagImpl(classId)

@@ -325,7 +325,7 @@ class KotlinDeserializedJvmSymbolsProvider(
             if (kotlinJvmBinaryClass.classHeader.kind != KotlinClassHeader.Kind.CLASS) return null
             val (nameResolver, classProto) = kotlinJvmBinaryClass.readClassDataFrom() ?: return null
 
-            val symbol = FirNonLocalClassSymbol(classId)
+            val symbol = FirClassSymbol(classId)
             deserializeClassToSymbol(
                 classId, classProto, symbol, nameResolver, session,
                 JvmBinaryAnnotationDeserializer(session),
