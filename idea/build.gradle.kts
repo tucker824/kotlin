@@ -163,6 +163,8 @@ dependencies {
     testCompile(intellijPluginDep("copyright"))
     testCompile(intellijPluginDep("properties"))
     testCompile(intellijPluginDep("java-i18n"))
+    testCompile(intellijPluginDep("junit"))
+
     testCompileOnly(intellijDep())
     testCompileOnly(commonDep("com.google.code.findbugs", "jsr305"))
     testCompileOnly(intellijPluginDep("gradle"))
@@ -173,7 +175,6 @@ dependencies {
         testRuntime(intellijPluginDep("maven"))
     }
 
-    testRuntime(intellijPluginDep("junit"))
     testRuntime(intellijPluginDep("gradle"))
     testRuntime(intellijPluginDep("Groovy"))
     testRuntime(intellijPluginDep("coverage"))
