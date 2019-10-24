@@ -56,7 +56,7 @@ object FirTreeBuilder : AbstractFirTreeBuilder() {
     val file = element("File", Declaration, annotationContainer, declaration)
 
     val anonymousFunction = element("AnonymousFunction", Declaration, function, expression)
-    val anonymousObject = element("AnonymousObject", Declaration, klass, expression)
+    val anonymousObject = element("AnonymousObject", Declaration, klass, symbolOwner, expression)
 
     val loop = element("Loop", Expression, statement, targetElement, annotationContainer)
     val doWhileLoop = element("DoWhileLoop", Expression, loop)

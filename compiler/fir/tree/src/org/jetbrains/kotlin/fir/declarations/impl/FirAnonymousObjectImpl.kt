@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.impl.FirAbstractAnnotatedElement
+import org.jetbrains.kotlin.fir.symbols.impl.FirAnonymousObjectSymbol
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitTypeRefImpl
 import org.jetbrains.kotlin.fir.visitors.*
@@ -24,7 +25,8 @@ import org.jetbrains.kotlin.fir.visitors.*
 
 class FirAnonymousObjectImpl(
     override val psi: PsiElement?,
-    override val session: FirSession
+    override val session: FirSession,
+    override val symbol: FirAnonymousObjectSymbol
 ) : FirAnonymousObject(), FirModifiableClass, FirAbstractAnnotatedElement {
     override var resolvePhase: FirResolvePhase = FirResolvePhase.RAW_FIR
     override val classKind: ClassKind get() = ClassKind.OBJECT
@@ -32,6 +34,10 @@ class FirAnonymousObjectImpl(
     override val declarations: MutableList<FirDeclaration> = mutableListOf()
     override val annotations: MutableList<FirAnnotationCall> = mutableListOf()
     override var typeRef: FirTypeRef = FirImplicitTypeRefImpl(null)
+
+    init {
+        symbol.bind(this)
+    }
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {
         superTypeRefs.forEach { it.accept(visitor, data) }

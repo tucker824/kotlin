@@ -245,6 +245,11 @@ object NodeConfigurator : AbstractFieldConfigurator() {
             }
         }
 
+        anonymousObject.configure {
+            parentArg(symbolOwner, "F", anonymousObject)
+            +symbol("FirAnonymousObjectSymbol")
+        }
+
         typeParameter.configure {
             parentArg(symbolOwner, "F", typeParameter)
             +symbol("FirTypeParameterSymbol")

@@ -6,9 +6,11 @@
 package org.jetbrains.kotlin.fir.symbols.impl
 
 import org.jetbrains.kotlin.fir.FirSymbolOwner
+import org.jetbrains.kotlin.fir.declarations.FirAnonymousObject
 import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
 import org.jetbrains.kotlin.fir.declarations.FirTypeAlias
+import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.ConeClassLikeLookupTag
 import org.jetbrains.kotlin.fir.symbols.ConeTypeAliasLookupTag
 import org.jetbrains.kotlin.name.ClassId
@@ -30,6 +32,10 @@ class FirClassSymbol(classId: ClassId) : FirClassLikeSymbol<FirRegularClass>(cla
         else ConeClassLikeLookupTagImpl(classId)
 
     override fun toLookupTag(): ConeClassLikeLookupTag = lookupTag
+}
+
+class FirAnonymousObjectSymbol : AbstractFirBasedSymbol<FirAnonymousObject>() {
+    val lookupTag = ConeAnonymousObjectLookupTag(this)
 }
 
 class FirTypeAliasSymbol(classId: ClassId) : FirClassLikeSymbol<FirTypeAlias>(classId) {
