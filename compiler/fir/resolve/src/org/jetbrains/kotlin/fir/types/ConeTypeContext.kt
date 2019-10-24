@@ -120,7 +120,7 @@ interface ConeTypeContext : TypeSystemContext, TypeSystemOptimizationContext, Ty
 
     override fun SimpleTypeMarker.withNullability(nullable: Boolean): SimpleTypeMarker {
         require(this is ConeKotlinType)
-        return withNullability(ConeNullability.create(nullable))
+        return withNullability(ConeNullability.create(nullable)) as SimpleTypeMarker
     }
 
     override fun SimpleTypeMarker.typeConstructor(): TypeConstructorMarker {
@@ -323,7 +323,7 @@ interface ConeTypeContext : TypeSystemContext, TypeSystemOptimizationContext, Ty
             newArgument.constructor.supertypes = upperBounds as List<ConeKotlinType>
         }
 
-        return type.withArguments(newArguments)
+        return type.withArguments(newArguments) as SimpleTypeMarker
     }
 
     override fun SimpleTypeMarker.asArgumentList(): TypeArgumentListMarker {

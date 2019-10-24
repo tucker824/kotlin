@@ -19,6 +19,10 @@ class ConeTypeParameterTypeImpl(
 
     override val nullability: ConeNullability = ConeNullability.create(isNullable)
 
+    override fun withNullability(nullability: ConeNullability): ConeTypeParameterTypeImpl {
+        if (nullability == this.nullability) return this
+        return ConeTypeParameterTypeImpl(lookupTag, nullability.isNullable)
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

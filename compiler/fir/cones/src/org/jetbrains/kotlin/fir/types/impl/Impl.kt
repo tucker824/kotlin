@@ -14,6 +14,17 @@ open class ConeClassTypeImpl(
     isNullable: Boolean
 ) : ConeClassType() {
     override val nullability: ConeNullability = ConeNullability.create(isNullable)
+
+    override fun withNullability(nullability: ConeNullability): ConeClassTypeImpl {
+        if (nullability == this.nullability) return this
+        return ConeClassTypeImpl(lookupTag, typeArguments, nullability.isNullable)
+    }
+
+    override fun withArguments(arguments: Array<out ConeKotlinTypeProjection>): ConeClassTypeImpl {
+        if (arguments === this.typeArguments) return this
+        return ConeClassTypeImpl(lookupTag, arguments, nullability.isNullable)
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -46,5 +57,15 @@ class ConeAbbreviatedTypeImpl(
         get() = abbreviationLookupTag
 
     override val nullability: ConeNullability = ConeNullability.create(isNullable)
+
+    override fun withNullability(nullability: ConeNullability): ConeAbbreviatedTypeImpl {
+        if (nullability == this.nullability) return this
+        return ConeAbbreviatedTypeImpl(abbreviationLookupTag, typeArguments, nullability.isNullable)
+    }
+
+    override fun withArguments(arguments: Array<out ConeKotlinTypeProjection>): ConeAbbreviatedTypeImpl {
+        if (arguments === this.typeArguments) return this
+        return ConeAbbreviatedTypeImpl(abbreviationLookupTag, arguments, nullability.isNullable)
+    }
 }
 

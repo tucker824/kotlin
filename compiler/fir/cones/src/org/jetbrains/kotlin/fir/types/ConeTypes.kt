@@ -76,6 +76,12 @@ sealed class ConeKotlinType : ConeKotlinTypeProjection(), ConeTypedProjection, K
 
     abstract val nullability: ConeNullability
 
+    abstract fun withNullability(nullability: ConeNullability): ConeKotlinType
+
+    open fun withArguments(arguments: Array<out ConeKotlinTypeProjection>): ConeKotlinType {
+        throw UnsupportedOperationException("This kind of ConeKotlinType does not support withArguments(): $this")
+    }
+
     override fun toString(): String {
         return render()
     }
@@ -98,6 +104,14 @@ class ConeClassErrorType(val reason: String) : ConeClassLikeType() {
 
     override val nullability: ConeNullability
         get() = ConeNullability.UNKNOWN
+
+    override fun withNullability(nullability: ConeNullability): ConeClassErrorType {
+        return this
+    }
+
+    override fun withArguments(arguments: Array<out ConeKotlinTypeProjection>): ConeKotlinType {
+        return this
+    }
 
     override fun toString(): String {
         return "<ERROR CLASS: $reason>"
@@ -132,6 +146,11 @@ data class ConeFlexibleType(val lowerBound: ConeKotlinType, val upperBound: Cone
 
     override val nullability: ConeNullability
         get() = lowerBound.nullability.takeIf { it == upperBound.nullability } ?: ConeNullability.UNKNOWN
+
+    override fun withNullability(nullability: ConeNullability): ConeFlexibleType {
+        if (nullability == this.nullability) return this
+        return ConeFlexibleType(lowerBound.withNullability(nullability), upperBound.withNullability(nullability))
+    }
 }
 
 fun ConeKotlinType.upperBoundIfFlexible() = (this as? ConeFlexibleType)?.upperBound ?: this
@@ -158,6 +177,11 @@ class ConeCapturedType(
 
     override val typeArguments: Array<out ConeKotlinTypeProjection>
         get() = emptyArray()
+
+    override fun withNullability(nullability: ConeNullability): ConeCapturedType {
+        if (nullability == this.nullability) return this
+        return ConeCapturedType(captureStatus, lowerType, nullability, constructor)
+    }
 }
 
 class ConeTypeVariableType(
@@ -165,13 +189,22 @@ class ConeTypeVariableType(
     override val lookupTag: ConeClassifierLookupTag
 ) : ConeLookupTagBasedType() {
     override val typeArguments: Array<out ConeKotlinTypeProjection> get() = emptyArray()
+
+    override fun withNullability(nullability: ConeNullability): ConeTypeVariableType {
+        if (nullability == this.nullability) return this
+        return ConeTypeVariableType(nullability, lookupTag)
+    }
 }
 
-class ConeDefinitelyNotNullType(val original: ConeKotlinType): ConeKotlinType(), DefinitelyNotNullTypeMarker {
+class ConeDefinitelyNotNullType(val original: ConeKotlinType) : ConeKotlinType(), DefinitelyNotNullTypeMarker {
     override val typeArguments: Array<out ConeKotlinTypeProjection>
         get() = original.typeArguments
     override val nullability: ConeNullability
         get() = ConeNullability.NOT_NULL
+
+    override fun withNullability(nullability: ConeNullability): ConeKotlinType {
+        throw UnsupportedOperationException("ConeDefinitelyNotNullType cannot change its nullability")
+    }
 }
 
 /*
@@ -188,6 +221,17 @@ class ConeIntersectionType(
 
     override val nullability: ConeNullability
         get() = ConeNullability.NOT_NULL
+
+    override fun withNullability(nullability: ConeNullability): ConeIntersectionType {
+        if (nullability == this.nullability) return this
+        return when (nullability) {
+            ConeNullability.NULLABLE -> this.mapTypes {
+                it.withNullability(nullability)
+            }
+            ConeNullability.UNKNOWN -> this // TODO: is that correct?
+            ConeNullability.NOT_NULL -> this
+        }
+    }
 }
 
 fun ConeIntersectionType.mapTypes(func: (ConeKotlinType) -> ConeKotlinType): ConeIntersectionType {

@@ -58,7 +58,11 @@ fun ConeAbbreviatedType.directExpansionType(useSiteSession: FirSession): ConeCla
     return mapTypeAliasArguments(typeAlias, this, resultType) as? ConeClassLikeType
 }
 
-private fun mapTypeAliasArguments(typeAlias: FirTypeAlias, abbreviatedType: ConeAbbreviatedType, resultingType: ConeClassLikeType): ConeKotlinType {
+private fun mapTypeAliasArguments(
+    typeAlias: FirTypeAlias,
+    abbreviatedType: ConeAbbreviatedType,
+    resultingType: ConeClassLikeType
+): ConeKotlinType {
     val typeAliasMap = typeAlias.typeParameters.map { it.symbol }.zip(abbreviatedType.typeArguments).toMap()
 
     val substitutor = object : AbstractConeSubstitutor() {
@@ -71,8 +75,7 @@ private fun mapTypeAliasArguments(typeAlias: FirTypeAlias, abbreviatedType: Cone
             val symbol = (type as? ConeTypeParameterType)?.lookupTag?.toSymbol() ?: return super.substituteArgument(projection)
             val mappedProjection = typeAliasMap[symbol] ?: return super.substituteArgument(projection)
             val mappedType = (mappedProjection as? ConeTypedProjection)?.type ?: return mappedProjection
-            val resultingKind = mappedProjection.kind + projection.kind
-            return when (resultingKind) {
+            return when (mappedProjection.kind + projection.kind) {
                 ProjectionKind.STAR -> ConeStarProjection
                 ProjectionKind.IN -> ConeKotlinTypeProjectionIn(mappedType)
                 ProjectionKind.OUT -> ConeKotlinTypeProjectionOut(mappedType)
@@ -147,53 +150,6 @@ private fun List<FirQualifierPart>.toTypeProjections(): Array<ConeKotlinTypeProj
     }
 }.toTypedArray()
 
-
-fun <T : ConeKotlinType> T.withNullability(nullability: ConeNullability): T {
-    if (this.nullability == nullability) {
-        return this
-    }
-
-    return when (this) {
-        is ConeClassErrorType -> this
-        is ConeClassTypeImpl -> ConeClassTypeImpl(lookupTag, typeArguments, nullability.isNullable) as T
-        is ConeAbbreviatedTypeImpl -> ConeAbbreviatedTypeImpl(
-            abbreviationLookupTag,
-            typeArguments,
-            nullability.isNullable
-        ) as T
-        is ConeTypeParameterTypeImpl -> ConeTypeParameterTypeImpl(lookupTag, nullability.isNullable) as T
-        is ConeFlexibleType -> ConeFlexibleType(lowerBound.withNullability(nullability), upperBound.withNullability(nullability)) as T
-        is ConeTypeVariableType -> ConeTypeVariableType(nullability, lookupTag) as T
-        is ConeCapturedType -> ConeCapturedType(captureStatus, lowerType, nullability, constructor) as T
-        is ConeIntersectionType -> when (nullability) {
-            ConeNullability.NULLABLE -> this.mapTypes {
-                it.withNullability(nullability)
-            }
-            ConeNullability.UNKNOWN -> this // TODO: is that correct?
-            ConeNullability.NOT_NULL -> this
-        } as T
-        else -> error("sealed: ${this::class}")
-    }
-}
-
-
-fun <T : ConeKotlinType> T.withArguments(arguments: Array<out ConeKotlinTypeProjection>): T {
-    if (this.typeArguments === arguments) {
-        return this
-    }
-
-    return when (this) {
-        is ConeClassErrorType -> this
-        is ConeClassTypeImpl -> ConeClassTypeImpl(lookupTag, arguments, nullability.isNullable) as T
-        is ConeAbbreviatedTypeImpl -> ConeAbbreviatedTypeImpl(
-            abbreviationLookupTag,
-            arguments,
-            nullability.isNullable
-        ) as T
-        else -> error("Not supported: $this: ${this.render()}")
-    }
-}
-
 fun FirFunction<*>.constructFunctionalTypeRef(session: FirSession): FirResolvedTypeRef {
     val receiverTypeRef = when (this) {
         is FirSimpleFunction -> receiverTypeRef
@@ -219,8 +175,7 @@ fun createFunctionalType(
     val receiverAndParameterTypes = listOfNotNull(receiverType) + parameters + listOf(rawReturnType)
 
     val functionalTypeId = StandardClassIds.byName("Function${receiverAndParameterTypes.size - 1}")
-    val functionalType = functionalTypeId(session.firSymbolProvider).constructType(receiverAndParameterTypes.toTypedArray(), isNullable = false)
-    return functionalType
+    return functionalTypeId(session.firSymbolProvider).constructType(receiverAndParameterTypes.toTypedArray(), isNullable = false)
 }
 
 fun BodyResolveComponents.typeForQualifier(resolvedQualifier: FirResolvedQualifier): FirTypeRef {
