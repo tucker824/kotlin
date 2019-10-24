@@ -31,7 +31,7 @@ open class FirTypeResolveTransformer : FirAbstractTreeTransformerWithSuperTypes(
         }
     }
 
-    override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirStatement> {
+    override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirDeclaration> {
         withScopeCleanup {
             regularClass.addTypeParametersScope()
             regularClass.typeParameters.forEach {

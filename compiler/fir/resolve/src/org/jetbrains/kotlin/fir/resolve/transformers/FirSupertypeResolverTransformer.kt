@@ -31,14 +31,14 @@ class FirSupertypeResolverTransformer : FirAbstractTreeTransformer(phase = FirRe
         this.file = file
     }
 
-    override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirStatement> {
+    override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirDeclaration> {
         val transformedClass = resolveSupertypesOrExpansions(regularClass) as? FirRegularClass ?: regularClass
 
         // resolve supertypes for nested classes
-        return transformDeclaration(transformedClass, data) as CompositeTransformResult<FirStatement>
+        return transformDeclaration(transformedClass, data)
     }
 
-    override fun transformEnumEntry(enumEntry: FirEnumEntry, data: Nothing?): CompositeTransformResult<FirStatement> {
+    override fun transformEnumEntry(enumEntry: FirEnumEntry, data: Nothing?): CompositeTransformResult<FirDeclaration> {
         return transformRegularClass(enumEntry, data)
     }
 
@@ -97,11 +97,11 @@ class FirSupertypeResolverTransformer : FirAbstractTreeTransformer(phase = FirRe
             towerScope.addImportingScopes(file, session, scopeSession)
         }
 
-        override fun transformEnumEntry(enumEntry: FirEnumEntry, data: Nothing?): CompositeTransformResult<FirStatement> {
+        override fun transformEnumEntry(enumEntry: FirEnumEntry, data: Nothing?): CompositeTransformResult<FirDeclaration> {
             return transformRegularClass(enumEntry, data)
         }
 
-        override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirStatement> {
+        override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirDeclaration> {
             val classId = regularClass.classId
             if (!isOuterClass(classId, requestedClassId)) return regularClass.compose()
             val transformedClass = withScopeCleanup {

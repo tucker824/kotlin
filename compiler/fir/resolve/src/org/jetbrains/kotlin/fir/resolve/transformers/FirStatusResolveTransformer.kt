@@ -109,10 +109,10 @@ class FirStatusResolveTransformer : FirAbstractTreeTransformer(phase = FirResolv
         return transformMemberDeclaration(typeAlias, data)
     }
 
-    override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirStatement> {
+    override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirDeclaration> {
         return storeClass(regularClass) {
             transformMemberDeclaration(regularClass, data)
-        } as CompositeTransformResult<FirStatement>
+        }
     }
 
     override fun transformMemberDeclaration(

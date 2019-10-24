@@ -139,7 +139,7 @@ open class FirBodyResolveTransformer(
         return declarationsTransformer.transformProperty(property, data)
     }
 
-    override fun transformRegularClass(regularClass: FirRegularClass, data: Any?): CompositeTransformResult<FirStatement> {
+    override fun transformRegularClass(regularClass: FirRegularClass, data: Any?): CompositeTransformResult<FirDeclaration> {
         return declarationsTransformer.transformRegularClass(regularClass, data)
     }
 

@@ -10,6 +10,6 @@ import org.jetbrains.kotlin.name.ClassId
 
 data class ConeClassLookupTagWithFixedSymbol(
     override val classId: ClassId,
-    val symbol: FirClassSymbol
+    val symbol: FirClassSymbol<*>
 ) : ConeClassLikeLookupTag() {
 }

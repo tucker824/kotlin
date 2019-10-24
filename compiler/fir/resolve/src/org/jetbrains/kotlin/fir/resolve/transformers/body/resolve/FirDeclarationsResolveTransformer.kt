@@ -133,7 +133,7 @@ class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransformer) 
         } as CompositeTransformResult<FirStatement>
     }
 
-    override fun transformRegularClass(regularClass: FirRegularClass, data: Any?): CompositeTransformResult<FirStatement> {
+    override fun transformRegularClass(regularClass: FirRegularClass, data: Any?): CompositeTransformResult<FirDeclaration> {
         localScopes.lastOrNull()?.storeDeclaration(regularClass)
         val oldConstructorScope = primaryConstructorParametersScope
         primaryConstructorParametersScope = null
@@ -148,7 +148,7 @@ class FirDeclarationsResolveTransformer(transformer: FirBodyResolveTransformer) 
             transformDeclaration(regularClass, data)
         }
         primaryConstructorParametersScope = oldConstructorScope
-        return result as CompositeTransformResult<FirStatement>
+        return result
     }
 
     private fun transformAnonymousFunctionWithLambdaResolution(

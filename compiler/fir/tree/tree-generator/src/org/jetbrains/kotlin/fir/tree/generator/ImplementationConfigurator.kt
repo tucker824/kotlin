@@ -53,7 +53,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         val modifiableClass = impl(klass, "FirModifiableClass")
 
         val modifiableRegularClass = impl(regularClass, "FirModifiableRegularClass") {
-            parents += modifiableClass
+            parents += modifiableClass.withArg(regularClass)
             parents += modifiableTypeParametersOwner
         }
 
@@ -67,7 +67,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         impl(sealedClass, config = regularClassConfig)
 
         impl(anonymousObject) {
-            parents += modifiableClass
+            parents += modifiableClass.withArg(anonymousObject)
             default("classKind") {
                 value = "ClassKind.OBJECT"
                 withGetter = true
@@ -75,7 +75,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         }
 
         impl(enumEntry) {
-            parents += modifiableClass
+            parents += modifiableClass.withArg(regularClass)
             parents += modifiableTypeParametersOwner
             default("status", "FirDeclarationStatusImpl(Visibilities.UNKNOWN, Modality.FINAL)")
             default("classKind") {

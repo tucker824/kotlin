@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.fir.FirPureAbstractElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirExpression
-import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.fir.visitors.*
@@ -25,14 +25,14 @@ abstract class FirEnumEntry : FirPureAbstractElement(), FirRegularClass {
     abstract override val psi: PsiElement?
     abstract override val session: FirSession
     abstract override val resolvePhase: FirResolvePhase
-    abstract override val name: Name
-    abstract override val annotations: List<FirAnnotationCall>
-    abstract override val typeParameters: List<FirTypeParameter>
-    abstract override val status: FirDeclarationStatus
     abstract override val supertypesComputationStatus: SupertypesComputationStatus
     abstract override val classKind: ClassKind
     abstract override val declarations: List<FirDeclaration>
-    abstract override val symbol: FirClassSymbol
+    abstract override val annotations: List<FirAnnotationCall>
+    abstract override val name: Name
+    abstract override val typeParameters: List<FirTypeParameter>
+    abstract override val status: FirDeclarationStatus
+    abstract override val symbol: FirRegularClassSymbol
     abstract override val companionObject: FirRegularClass?
     abstract override val superTypeRefs: List<FirTypeRef>
     abstract val arguments: List<FirExpression>

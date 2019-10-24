@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.fir.resolve.FirSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.firSymbolProvider
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassifierSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirTypeAliasSymbol
 import org.jetbrains.kotlin.fir.types.ConeLookupTagBasedType
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
@@ -44,12 +45,12 @@ class FirSealedClassInheritorsTransformer : FirTransformer<Nothing?>() {
             return (file.transformChildren(this, data) as FirFile).compose()
         }
 
-        override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirStatement> {
+        override fun transformRegularClass(regularClass: FirRegularClass, data: Nothing?): CompositeTransformResult<FirDeclaration> {
             if (inheritorsMap.isEmpty()) return regularClass.compose()
             return (regularClass.transformChildren(this, data) as FirRegularClass).compose()
         }
 
-        override fun transformSealedClass(sealedClass: FirSealedClass, data: Nothing?): CompositeTransformResult<FirStatement> {
+        override fun transformSealedClass(sealedClass: FirSealedClass, data: Nothing?): CompositeTransformResult<FirDeclaration> {
             val inheritors = inheritorsMap.remove(sealedClass)
             if (inheritors != null) {
                 sealedClass.replaceInheritors(inheritors)
@@ -81,7 +82,7 @@ class FirSealedClassInheritorsTransformer : FirTransformer<Nothing?>() {
             val lookupTag = ((typeRef as FirResolvedTypeRef).type as? ConeLookupTagBasedType)?.lookupTag ?: return null
             val classLikeSymbol: FirClassifierSymbol<*> = symbolProvider.getSymbolByLookupTag(lookupTag) ?: return null
             return when (classLikeSymbol) {
-                is FirClassSymbol -> classLikeSymbol.fir
+                is FirRegularClassSymbol -> classLikeSymbol.fir
                 is FirTypeAliasSymbol -> extractClassFromTypeRef(symbolProvider, classLikeSymbol.fir.expandedTypeRef)
                 else -> null
             }
