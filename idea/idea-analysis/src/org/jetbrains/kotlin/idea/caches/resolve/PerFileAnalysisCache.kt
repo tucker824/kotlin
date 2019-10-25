@@ -138,7 +138,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
                 file.clearInBlockModifications()
             }
         }
-        return null
+        return if (cache.size == 1) cache[file] else null
     }
 
     private fun lookUp(analyzableElement: KtElement): AnalysisResult? {
