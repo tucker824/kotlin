@@ -11,6 +11,8 @@ abstract class KlibFunctionExtensionVisitor : KmFunctionExtensionVisitor {
 
     abstract fun visitAnnotation(annotation: KmAnnotation)
 
+    abstract fun visitUniqId(uniqId: DescriptorUniqId)
+
     override val type: KmExtensionType
         get() = TYPE
 

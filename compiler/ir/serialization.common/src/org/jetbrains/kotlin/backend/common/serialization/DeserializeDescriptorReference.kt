@@ -24,8 +24,7 @@ import org.jetbrains.kotlin.serialization.deserialization.descriptors.Deserializ
 abstract class DescriptorReferenceDeserializer(
     val currentModule: ModuleDescriptor,
     val mangler: KotlinMangler,
-    val builtIns: IrBuiltIns,
-    val resolvedForwardDeclarations: MutableMap<UniqId, UniqId>
+    val builtIns: IrBuiltIns
 ) : DescriptorUniqIdAware {
 
     protected open fun resolveSpecialDescriptor(fqn: FqName) = builtIns.builtIns.getBuiltInClassByFqName(fqn)
@@ -85,6 +84,8 @@ abstract class DescriptorReferenceDeserializer(
         return ClassMembers(classConstructorDescriptor, allMembersMap, realMembersMap)
     }
 
+    abstract fun platformSpecificHandler(packageFqName: FqName, name: String, protoIndex: Long?): DeclarationDescriptor?
+
     open fun deserializeDescriptorReference(
         packageFqName: FqName,
         classFqName: FqName,
@@ -95,33 +96,13 @@ abstract class DescriptorReferenceDeserializer(
 
         val protoIndex = index
 
+        platformSpecificHandler(packageFqName, name, protoIndex)?.let { return it }
+
         val (clazz, members) = if (classFqName.isRoot) {
             Pair(null, getContributedDescriptors(packageFqName, name))
         } else {
             val clazz = currentModule.findClassAcrossModuleDependencies(ClassId(packageFqName, classFqName, false))!!
             Pair(clazz, getContributedDescriptors(clazz.unsubstitutedMemberScope, name) + clazz.getConstructors())
-        }
-
-        // TODO: This is still native specific. Eliminate.
-        val fqnString = packageFqName.asString()
-        if (fqnString.startsWith("cnames.") || fqnString.startsWith("objcnames.")) {
-            val descriptor =
-                currentModule.findClassAcrossModuleDependencies(ClassId(packageFqName, FqName(name), false))!!
-            if (!descriptor.fqNameUnsafe.asString().startsWith("cnames") && !descriptor.fqNameUnsafe.asString().startsWith(
-                    "objcnames"
-                )
-            ) {
-                if (descriptor is DeserializedClassDescriptor) {
-                    val uniqId = UniqId(descriptor.getUniqId()!!)
-                    val newKey = uniqId
-                    val oldKey = UniqId(protoIndex!!)
-
-                    resolvedForwardDeclarations.put(oldKey, newKey)
-                } else {
-                    /* ??? */
-                }
-            }
-            return descriptor
         }
 
         if (DescriptorReferenceFlags.IS_ENUM_ENTRY.decode(flags)) {

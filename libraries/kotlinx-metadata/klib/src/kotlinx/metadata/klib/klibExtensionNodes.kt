@@ -33,6 +33,12 @@ class KlibFunctionExtension : KlibFunctionExtensionVisitor(), KmFunctionExtensio
 
     val annotations: MutableList<KmAnnotation> = mutableListOf()
 
+    var uniqId = DescriptorUniqId(0)
+
+    override fun visitUniqId(uniqId: DescriptorUniqId) {
+        this.uniqId = uniqId
+    }
+
     override fun visitAnnotation(annotation: KmAnnotation) {
         annotations += annotation
     }
@@ -40,6 +46,7 @@ class KlibFunctionExtension : KlibFunctionExtensionVisitor(), KmFunctionExtensio
     override fun accept(visitor: KmFunctionExtensionVisitor) {
         require(visitor is KlibFunctionExtensionVisitor)
         annotations.forEach(visitor::visitAnnotation)
+        visitor.visitUniqId(uniqId)
     }
 }
 

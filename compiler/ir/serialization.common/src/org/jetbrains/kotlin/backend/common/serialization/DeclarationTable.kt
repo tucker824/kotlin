@@ -56,7 +56,7 @@ abstract class GlobalDeclarationTable(private val mangler: KotlinMangler, privat
     fun isExportedDeclaration(declaration: IrDeclaration): Boolean = with(mangler) { declaration.isExported() }
 }
 
-class DeclarationTable(
+open class DeclarationTable(
     private val descriptorTable: DescriptorTable,
     private val globalDeclarationTable: GlobalDeclarationTable,
     startIndex: Long
@@ -77,8 +77,12 @@ class DeclarationTable(
         } else globalDeclarationTable.computeUniqIdByDeclaration(declaration)
     }
 
+    open fun tryComputeSpecial(declaration: IrDeclaration): UniqId? {
+        return null
+    }
+
     fun uniqIdByDeclaration(declaration: IrDeclaration): UniqId {
-        val uniqId = computeUniqIdByDeclaration(declaration)
+        val uniqId = tryComputeSpecial(declaration) ?: computeUniqIdByDeclaration(declaration)
         if (declaration.isMetadataDeclaration(false)) {
             descriptorTable.put(declaration.descriptor, uniqId)
         }

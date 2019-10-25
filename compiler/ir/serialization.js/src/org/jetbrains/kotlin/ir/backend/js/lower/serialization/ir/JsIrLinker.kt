@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.konan.kotlinLibrary
 import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
+import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.util.SymbolTable
 import org.jetbrains.kotlin.resolve.descriptorUtil.isPublishedApi
 
@@ -22,7 +23,7 @@ class JsIrLinker(
     logger: LoggingContext,
     builtIns: IrBuiltIns,
     symbolTable: SymbolTable
-) : KotlinIrLinker(logger, builtIns, symbolTable, emptyList(), null, PUBLIC_LOCAL_UNIQ_ID_EDGE),
+) : KotlinIrLinker(logger, builtIns, symbolTable, emptyList(), PUBLIC_LOCAL_UNIQ_ID_EDGE),
     DescriptorUniqIdAware by DeserializedDescriptorUniqIdAware {
 
     override val descriptorReferenceDeserializer =
@@ -56,6 +57,10 @@ class JsIrLinker(
 
     override fun DeclarationDescriptor.hasNoDeserializedForm(): Boolean =
         false
+
+    override fun handleDeserializedSymbol(symbol: IrSymbol) {}
+
+    override fun declareForwardDeclarations() {}
 
     private val ModuleDescriptor.userName get() = kotlinLibrary.libraryFile.absolutePath
 }

@@ -10,6 +10,10 @@ import kotlinx.metadata.*
 val KmFunction.annotations: MutableList<KmAnnotation>
     get() = klibExtensions.annotations
 
+var KmFunction.uniqId: DescriptorUniqId
+    get() = klibExtensions.uniqId
+    set(value) { klibExtensions.uniqId = value }
+
 val KmClass.annotations: MutableList<KmAnnotation>
     get() = klibExtensions.annotations
 

@@ -131,7 +131,8 @@ abstract class IrMultiTableReader<K>(file: File, private val keyReader: ByteBuff
             readIndexMap(rowOffset)
         }
 
-        val coordinates = indexToMap[id] ?: error("No coordinates found for $id")
+        val coordinates = indexToMap[id] ?:
+            error("No coordinates found for $id")
         val offset = coordinates.first
         val size = coordinates.second
         val result = ByteArray(size)

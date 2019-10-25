@@ -9,12 +9,18 @@ import org.jetbrains.kotlin.backend.common.serialization.*
 import org.jetbrains.kotlin.backend.common.serialization.DescriptorReferenceDeserializer
 import org.jetbrains.kotlin.backend.common.serialization.DescriptorUniqIdAware
 import org.jetbrains.kotlin.backend.common.serialization.DeserializedDescriptorUniqIdAware
+import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
+import org.jetbrains.kotlin.name.FqName
 
 class JsDescriptorReferenceDeserializer(
     currentModule: ModuleDescriptor,
     mangler: KotlinMangler,
     builtIns: IrBuiltIns
-) : DescriptorReferenceDeserializer(currentModule, mangler, builtIns, mutableMapOf()),
-    DescriptorUniqIdAware by DeserializedDescriptorUniqIdAware
+) : DescriptorReferenceDeserializer(currentModule, mangler, builtIns),
+    DescriptorUniqIdAware by DeserializedDescriptorUniqIdAware {
+
+    override fun platformSpecificHandler(packageFqName: FqName, name: String, protoIndex: Long?): DeclarationDescriptor? =
+            null
+}

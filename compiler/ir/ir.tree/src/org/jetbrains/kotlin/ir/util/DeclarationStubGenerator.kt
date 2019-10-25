@@ -63,7 +63,7 @@ class DeclarationStubGenerator(
         for (irProvider in irProviders)
             irProvider.getDeclaration(symbol)?.let { return it }
         return null
-    } 
+    }
 
     fun generateOrGetEmptyExternalPackageFragmentStub(descriptor: PackageFragmentDescriptor): IrExternalPackageFragment {
         val referenced = symbolTable.referenceExternalPackageFragment(descriptor)
@@ -85,7 +85,6 @@ class DeclarationStubGenerator(
             }
         }
     }
-
 
     fun generateMemberStub(descriptor: DeclarationDescriptor): IrDeclaration =
         when (descriptor) {

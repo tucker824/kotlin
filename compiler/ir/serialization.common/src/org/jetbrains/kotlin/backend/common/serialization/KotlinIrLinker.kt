@@ -10,11 +10,9 @@ import org.jetbrains.kotlin.backend.common.descriptors.*
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.impl.EmptyPackageFragmentDescriptor
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.declarations.impl.IrClassImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrModuleFragmentImpl
 import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
@@ -22,7 +20,6 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrBlockBodyImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrErrorExpressionImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrLoopBase
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.*
 import org.jetbrains.kotlin.ir.types.IrType
@@ -50,7 +47,6 @@ abstract class KotlinIrLinker(
     val builtIns: IrBuiltIns,
     val symbolTable: SymbolTable,
     private val exportedDependencies: List<ModuleDescriptor>,
-    private val forwardModuleDescriptor: ModuleDescriptor?,
     private val firstKnownBuiltinsIndex: Long
 ) : DescriptorUniqIdAware, IrDeserializer {
 
@@ -115,12 +111,11 @@ abstract class KotlinIrLinker(
     private val modulesWithReachableTopLevels = mutableSetOf<IrModuleDeserializer>()
 
     //TODO: This is Native specific. Eliminate me.
-    private val forwardDeclarations = mutableSetOf<IrSymbol>()
-    val resolvedForwardDeclarations = mutableMapOf<UniqId, UniqId>()
+    protected val resolvedForwardDeclarations = mutableMapOf<UniqId, UniqId>()
+
+    protected abstract fun handleDeserializedSymbol(symbol: IrSymbol)
 
     protected val deserializersForModules = mutableMapOf<ModuleDescriptor, IrModuleDeserializer>()
-
-    private fun getForwardDeclararationModuleDeserializer() = deserializersForModules.entries.single { it.key.isForwardDeclarationModule }.value
 
     inner class IrModuleDeserializer(
         private val moduleDescriptor: ModuleDescriptor,
@@ -128,8 +123,6 @@ abstract class KotlinIrLinker(
     ) {
 
         val fileToDeserializerMap = mutableMapOf<IrFile, IrDeserializerForFile>()
-
-        protected val moduleResolvedForwardDeclarations = mutableMapOf<UniqId, UniqId>()
 
         private val moduleDeserializationState = DeserializationState.ModuleDeserializationState(this)
         val moduleReversedFileIndex = mutableMapOf<UniqId, IrDeserializerForFile>()
@@ -153,7 +146,12 @@ abstract class KotlinIrLinker(
 
             private val deserializeBodies: Boolean = !onlyHeaders
 
-            private val fileLocalResolvedForwardDeclarations = mutableMapOf<UniqId, UniqId>()
+            private val ByteArray.codedInputStream: org.jetbrains.kotlin.protobuf.CodedInputStream
+                get() {
+                    val codedInputStream = org.jetbrains.kotlin.protobuf.CodedInputStream.newInstance(this)
+                    codedInputStream.setRecursionLimit(65535) // The default 64 is blatantly not enough for IR.
+                    return codedInputStream
+                }
 
             val fileLocalDeserializationState = DeserializationState.SimpleDeserializationState()
 
@@ -311,7 +309,7 @@ abstract class KotlinIrLinker(
                 val deserializationState =
                     if (topLevelKey.isLocal xor key.isLocal) getStateForID(key) else topLevelDeserializationState
 
-                val symbol = deserializationState.deserializedSymbols.getOrPut(key) {
+                return deserializationState.deserializedSymbols.getOrPut(key) {
                     val descriptor = if (proto.hasDescriptorReference()) {
                         deserializeDescriptorReference(proto.descriptorReference)
                     } else {
@@ -325,14 +323,6 @@ abstract class KotlinIrLinker(
 
                     referenceDeserializedSymbol(proto, descriptor)
                 }
-                if (symbol.descriptor is ClassDescriptor &&
-                    symbol.descriptor !is WrappedDeclarationDescriptor<*> &&
-                    symbol.descriptor.module.isForwardDeclarationModule
-                ) {
-                    forwardDeclarations.add(symbol)
-                }
-
-                return symbol
             }
 
             override fun deserializeDescriptorReference(proto: ProtoDescriptorReference) =
@@ -346,7 +336,9 @@ abstract class KotlinIrLinker(
 
             override fun deserializeIrSymbol(index: Int): IrSymbol {
                 val symbolData = loadSymbolProto(index)
-                return deserializeIrSymbolData(symbolData)
+                return deserializeIrSymbolData(symbolData).also {
+                    handleDeserializedSymbol(it)
+                }
             }
 
             override fun deserializeIrType(index: Int): IrType {
@@ -486,13 +478,7 @@ abstract class KotlinIrLinker(
         return currentIndex
     }
 
-    private val ByteArray.codedInputStream: org.jetbrains.kotlin.protobuf.CodedInputStream
-        get() {
-            val codedInputStream = org.jetbrains.kotlin.protobuf.CodedInputStream.newInstance(this)
-            codedInputStream.setRecursionLimit(65535) // The default 64 is blatantly not enough for IR.
-            return codedInputStream
-        }
-
+    // TODO: Looks like it should be explicit separate interface that is not part of a linker.
     protected abstract fun reader(moduleDescriptor: ModuleDescriptor, fileIndex: Int, uniqId: UniqId): ByteArray
     protected abstract fun readSymbol(moduleDescriptor: ModuleDescriptor, fileIndex: Int, symbolIndex: Int): ByteArray
     protected abstract fun readType(moduleDescriptor: ModuleDescriptor, fileIndex: Int, typeIndex: Int): ByteArray
@@ -560,41 +546,6 @@ abstract class KotlinIrLinker(
         }
 
         return symbol.owner as IrDeclaration
-    }
-
-    // TODO: This is Native specific. Eliminate me.
-    override fun declareForwardDeclarations() {
-        if (forwardModuleDescriptor == null) return
-
-        val packageFragments = forwardDeclarations.map { it.descriptor.findPackage() }.distinct()
-
-        // We don't bother making a real IR module here, as we have no need in it any later.
-        // All we need is just to declare forward declarations in the symbol table
-        // In case you need a full fledged module, turn the forEach into a map and collect
-        // produced files into an IrModuleFragment.
-
-        packageFragments.forEach { packageFragment ->
-            val symbol = IrFileSymbolImpl(packageFragment)
-            val file = IrFileImpl(NaiveSourceBasedFileEntryImpl("forward declarations pseudo-file"), symbol)
-            val symbols = forwardDeclarations
-                .filter { !it.isBound }
-                .filter { it.descriptor.findPackage() == packageFragment }
-            val declarations = symbols.map {
-
-                val classDescriptor = it.descriptor as ClassDescriptor
-                val declaration = symbolTable.declareClass(
-                    UNDEFINED_OFFSET, UNDEFINED_OFFSET, irrelevantOrigin,
-                    classDescriptor,
-                    classDescriptor.modality
-                ) { symbol: IrClassSymbol -> IrClassImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irrelevantOrigin, symbol) }
-                    .also {
-                        it.parent = file
-                    }
-                declaration
-
-            }
-            file.declarations.addAll(declarations)
-        }
     }
 
     fun deserializeIrModuleHeader(

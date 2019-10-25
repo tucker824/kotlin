@@ -84,6 +84,13 @@ class KlibMetadataExtensions : MetadataExtensions {
                     mutableListOf(annotation.writeAnnotation(c.strings).build())
                 )
             }
+
+            override fun visitUniqId(uniqId: DescriptorUniqId) {
+                proto.setExtension(
+                        KlibMetadataProtoBuf.functionUniqId,
+                        uniqId.write().build()
+                )
+            }
         }
     }
 
