@@ -5,7 +5,6 @@
 
 package kotlin.script.experimental
 
-import org.jetbrains.kotlin.script.util.resolvers.experimental.*
 import java.io.File
 import kotlin.script.experimental.api.ResultWithDiagnostics
 import kotlin.script.experimental.api.ScriptDiagnostic
@@ -14,25 +13,25 @@ class CompoundDependenciesResolver(private val resolvers: List<GenericDependenci
 
     constructor(vararg resolvers: GenericDependenciesResolver) : this(resolvers.toList())
 
-    override fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean {
-        return resolvers.any { it.accepts(artifactCoordinates) }
+    override fun acceptsArtifact(artifactCoordinates: String): Boolean {
+        return resolvers.any { it.acceptsArtifact(artifactCoordinates) }
     }
 
-    override fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean {
-        return resolvers.any { it.accepts(repositoryCoordinates) }
+    override fun acceptsRepository(repositoryCoordinates: String): Boolean {
+        return resolvers.any { it.acceptsRepository(repositoryCoordinates) }
     }
 
-    override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) {
+    override fun addRepository(repositoryCoordinates: String) {
         if (resolvers.count { it.tryAddRepository(repositoryCoordinates) } == 0)
-            throw Exception("Failed to detect repository type: ${repositoryCoordinates.string}")
+            throw Exception("Failed to detect repository type: ${repositoryCoordinates}")
     }
 
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> {
+    override fun resolve(artifactCoordinates: String): ResultWithDiagnostics<Iterable<File>> {
 
         val reports = mutableListOf<ScriptDiagnostic>()
 
         for (resolver in resolvers) {
-            if (resolver.accepts(artifactCoordinates)) {
+            if (resolver.acceptsArtifact(artifactCoordinates)) {
                 when (val resolveResult = resolver.resolve(artifactCoordinates)) {
                     is ResultWithDiagnostics.Failure -> reports.addAll(resolveResult.reports)
                     else -> return resolveResult

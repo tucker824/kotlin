@@ -19,9 +19,6 @@ import org.apache.ivy.plugins.resolver.IBiblioResolver
 import org.apache.ivy.plugins.resolver.URLResolver
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
-import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericArtifactCoordinates
-import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericRepositoryCoordinates
-import org.jetbrains.kotlin.script.util.resolvers.experimental.MavenArtifactCoordinates
 import java.io.File
 import kotlin.script.experimental.api.ResultWithDiagnostics
 
@@ -34,35 +31,31 @@ class IvyDependenciesResolver : GenericDependenciesResolver() {
         val type: String? = null
     )
 
-    override fun accepts(artifactCoordinates: GenericArtifactCoordinates) = artifactCoordinates.ivyCoordinates != null
+    override fun acceptsArtifact(artifactCoordinates: String) = artifactCoordinates.ivyCoordinates != null
 
-    override fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean {
-        return repositoryCoordinates.url != null
+    override fun acceptsRepository(repositoryCoordinates: String): Boolean {
+        return repositoryCoordinates.toRepositoryUrlOrNull() != null
     }
 
     private fun String?.isValidParam() = this?.isNotBlank() ?: false
 
-    val GenericArtifactCoordinates.ivyCoordinates: IvyArtifactCoordinates?
+    val String.ivyCoordinates: IvyArtifactCoordinates?
         get() {
-            if (this is MavenArtifactCoordinates && (groupId.isValidParam() || artifactId.isValidParam())) {
-                return IvyArtifactCoordinates(groupId.orEmpty(), artifactId.orEmpty(), version.orEmpty())
+            val artifactType = this.substringAfterLast('@', "").trim()
+            val stringCoordinates = if (artifactType.isNotEmpty()) this.removeSuffix("@$artifactType") else this
+            if (stringCoordinates.isValidParam() && stringCoordinates.count { it == ':' }.let { it == 2 || it == 3 }) {
+                val artifactId = stringCoordinates.split(':')
+                return IvyArtifactCoordinates(
+                    artifactId[0], artifactId[1], artifactId[2],
+                    if (artifactId.size > 3) artifactId[3] else null,
+                    if (artifactType.isNotEmpty()) artifactType else null
+                )
             } else {
-                val artifactType = string.substringAfterLast('@', "").trim()
-                val stringCoordinates = if (artifactType.isNotEmpty()) string.removeSuffix("@$artifactType") else string
-                if (stringCoordinates.isValidParam() && stringCoordinates.count { it == ':' }.let { it == 2 || it == 3 }) {
-                    val artifactId = stringCoordinates.split(':')
-                    return IvyArtifactCoordinates(
-                        artifactId[0], artifactId[1], artifactId[2],
-                        if (artifactId.size > 3) artifactId[3] else null,
-                        if (artifactType.isNotEmpty()) artifactType else null
-                    )
-                } else {
-                    return null
-                }
+                return null
             }
         }
 
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> =
+    override fun resolve(artifactCoordinates: String): ResultWithDiagnostics<Iterable<File>> =
         resolveArtifact(artifactCoordinates.ivyCoordinates!!)
 
 
@@ -133,12 +126,12 @@ class IvyDependenciesResolver : GenericDependenciesResolver() {
         }
     }
 
-    override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) {
-        val url = repositoryCoordinates.url ?: throw Exception("Invalid Ivy repository URL: ${repositoryCoordinates.string}")
+    override fun addRepository(repositoryCoordinates: String) {
+        val url = repositoryCoordinates.toRepositoryUrlOrNull() ?: throw Exception("Invalid Ivy repository URL: $repositoryCoordinates")
         ivyResolvers.add(
             URLResolver().apply {
                 isM2compatible = true
-                name = repositoryCoordinates.name.takeIf { it.isValidParam() } ?: url.host
+                name = repositoryCoordinates
                 addArtifactPattern("${url.toString().let { if (it.endsWith('/')) it else "$it/" }}$DEFAULT_ARTIFACT_PATTERN")
             }
         )

@@ -5,44 +5,39 @@
 
 package kotlin.script.experimental
 
-import org.jetbrains.kotlin.script.util.resolvers.experimental.BasicArtifactCoordinates
-import org.jetbrains.kotlin.script.util.resolvers.experimental.BasicRepositoryCoordinates
-import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericArtifactCoordinates
-import org.jetbrains.kotlin.script.util.resolvers.experimental.GenericRepositoryCoordinates
 import java.io.File
+import java.net.MalformedURLException
+import java.net.URL
 import kotlin.script.experimental.api.ResultWithDiagnostics
 import kotlin.script.experimental.api.ScriptDiagnostic
+import kotlin.script.experimental.api.valueOrNull
 
 abstract class GenericDependenciesResolver {
 
-    abstract fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean
-    abstract fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean
+    abstract fun acceptsRepository(repositoryCoordinates: String): Boolean
+    abstract fun acceptsArtifact(artifactCoordinates: String): Boolean
 
-    abstract fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>>
-    abstract fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates)
+    abstract fun resolve(artifactCoordinates: String): ResultWithDiagnostics<Iterable<File>>
+    abstract fun addRepository(repositoryCoordinates: String)
 
     protected fun makeResolveFailureResult(message: String) = makeResolveFailureResult(listOf(message))
 
     protected fun makeResolveFailureResult(messages: Iterable<String>) =
         ResultWithDiagnostics.Failure(messages.map { ScriptDiagnostic(it, ScriptDiagnostic.Severity.WARNING)})
+
+    protected fun String.toRepositoryUrlOrNull(): URL? =
+        try {
+            URL(this)
+        } catch (_: MalformedURLException) {
+            null
+        }
 }
 
-fun GenericDependenciesResolver.tryResolve(artifactCoordinates: GenericArtifactCoordinates): Iterable<File>? =
-    if (accepts(artifactCoordinates)) resolve(artifactCoordinates).let {
-        when (it) {
-            is ResultWithDiagnostics.Success -> it.value
-            else -> null
-        }
-    } else null
+fun GenericDependenciesResolver.tryResolve(artifactCoordinates: String): Iterable<File>? =
+    if (acceptsArtifact(artifactCoordinates)) resolve(artifactCoordinates).valueOrNull() else null
 
-fun GenericDependenciesResolver.tryAddRepository(repositoryCoordinates: GenericRepositoryCoordinates) =
-    if (accepts(repositoryCoordinates)) {
+fun GenericDependenciesResolver.tryAddRepository(repositoryCoordinates: String) =
+    if (acceptsRepository(repositoryCoordinates)) {
         addRepository(repositoryCoordinates)
         true
     } else false
-
-fun GenericDependenciesResolver.tryResolve(artifactCoordinates: String): Iterable<File>? =
-    tryResolve(BasicArtifactCoordinates(artifactCoordinates))
-
-fun GenericDependenciesResolver.tryAddRepository(repositoryCoordinates: String, id: String? = null): Boolean =
-    tryAddRepository(BasicRepositoryCoordinates(repositoryCoordinates, id))

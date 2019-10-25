@@ -6,7 +6,6 @@
 package kotlin.script.experimental
 
 import com.jcabi.aether.Aether
-import org.jetbrains.kotlin.script.util.resolvers.experimental.*
 import org.sonatype.aether.repository.RemoteRepository
 import org.sonatype.aether.resolution.DependencyResolutionException
 import org.sonatype.aether.util.artifact.DefaultArtifact
@@ -19,11 +18,11 @@ val mavenCentral = RemoteRepository("maven-central", "default", "https://repo.ma
 
 class MavenDependenciesResolver : GenericDependenciesResolver() {
 
-    override fun accepts(artifactCoordinates: GenericArtifactCoordinates): Boolean =
+    override fun acceptsArtifact(artifactCoordinates: String): Boolean =
         artifactCoordinates.mavenArtifact != null
 
-    override fun accepts(repositoryCoordinates: GenericRepositoryCoordinates): Boolean {
-        return repositoryCoordinates.url != null
+    override fun acceptsRepository(repositoryCoordinates: String): Boolean {
+        return repositoryCoordinates.toRepositoryUrlOrNull() != null
     }
 
     // TODO: make robust
@@ -37,28 +36,16 @@ class MavenDependenciesResolver : GenericDependenciesResolver() {
 
     private fun String?.isValidParam() = this?.isNotBlank() ?: false
 
-    private val GenericArtifactCoordinates.mavenArtifact: DefaultArtifact?
+    private val String.mavenArtifact: DefaultArtifact?
         get() {
-            fun String?.nullIfBlank(): String? = this?.takeUnless(kotlin.String::isBlank)
-
-            return if (this is MavenArtifactCoordinates && (groupId.isValidParam() || artifactId.isValidParam())) {
-                DefaultArtifact(
-                    groupId.nullIfBlank(),
-                    artifactId.nullIfBlank(),
-                    null,
-                    version.nullIfBlank()
-                )
+            return if (this.isValidParam() && this.count { it == ':' } == 2) {
+                DefaultArtifact(this)
             } else {
-                val coordinatesString = string
-                if (coordinatesString.isValidParam() && coordinatesString.count { it == ':' } == 2) {
-                    DefaultArtifact(coordinatesString)
-                } else {
-                    null
-                }
+                null
             }
         }
 
-    override fun resolve(artifactCoordinates: GenericArtifactCoordinates): ResultWithDiagnostics<Iterable<File>> {
+    override fun resolve(artifactCoordinates: String): ResultWithDiagnostics<Iterable<File>> {
 
         val artifactId = artifactCoordinates.mavenArtifact!!
 
@@ -72,12 +59,12 @@ class MavenDependenciesResolver : GenericDependenciesResolver() {
         return makeResolveFailureResult(allRepositories().map { "$it: $artifactId not found" })
     }
 
-    override fun addRepository(repositoryCoordinates: GenericRepositoryCoordinates) {
-        val url = repositoryCoordinates.url ?: throw Exception("Invalid Maven repository URL: ${repositoryCoordinates.string}")
+    override fun addRepository(repositoryCoordinates: String) {
+        val url = repositoryCoordinates.toRepositoryUrlOrNull() ?: throw Exception("Invalid Maven repository URL: ${repositoryCoordinates}")
 
         repos.add(
             RemoteRepository(
-                if (repositoryCoordinates.name.isValidParam()) repositoryCoordinates.name else url.host,
+                repositoryCoordinates,
                 "default",
                 url.toString()
             )
