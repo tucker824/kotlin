@@ -1,5 +1,6 @@
 // !DIAGNOSTICS: -UNUSED_PARAMETER
 // !RENDER_DIAGNOSTICS_MESSAGES
+// !LANGUAGE: -NewInference
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.CLASS)
 annotation class A
