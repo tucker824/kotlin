@@ -21,28 +21,25 @@ class FlatLibDirectoryDependenciesResolver(vararg paths: File) : GenericDependen
     }
 
     override fun resolve(artifactCoordinates: String): ResultWithDiagnostics<Iterable<File>> {
-        if(!acceptsArtifact(artifactCoordinates)) throw Exception("Path is empty")
+        if(!acceptsArtifact(artifactCoordinates)) throw Exception("Path is invalid")
 
-        val resolveAttempts = mutableListOf<String>()
+        val messages = mutableListOf<String>()
 
         val path = artifactCoordinates
         for (repo in localRepos) {
             // TODO: add coordinates and wildcard matching
             val file = File(repo, path)
             when {
-                !file.exists() -> resolveAttempts.add("File '${file.canonicalPath}' not exists")
-                !file.isFile && !file.isDirectory -> resolveAttempts.add("Path '${file.canonicalPath}' is neither file nor directory")
+                !file.exists() -> messages.add("File '${file.canonicalPath}' not exists")
+                !file.isFile && !file.isDirectory -> messages.add("Path '${file.canonicalPath}' is neither file nor directory")
                 else -> return ResultWithDiagnostics.Success(listOf(file))
             }
         }
-        return makeResolveFailureResult(resolveAttempts)
+        return makeResolveFailureResult(messages)
     }
 
-    override fun acceptsArtifact(artifactCoordinates: String): Boolean {
-        return artifactCoordinates.takeUnless(String::isBlank)?.let { path ->
-            localRepos.any { File(it, path).exists() }
-        } ?: false
-    }
+    override fun acceptsArtifact(artifactCoordinates: String) =
+        localRepos.isNotEmpty() && !artifactCoordinates.isBlank() && !artifactCoordinates.contains(':')
 
     override fun acceptsRepository(repositoryCoordinates: String): Boolean = repositoryCoordinates.toFilePath() != null
 
