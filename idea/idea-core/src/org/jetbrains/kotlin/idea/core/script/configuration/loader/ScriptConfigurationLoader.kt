@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
  * @see [org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptConfigurationManager] for more details.
  */
 internal interface ScriptConfigurationLoader {
-    fun isAsync(scriptDefinition: ScriptDefinition): Boolean = false
+    fun shouldRunInBackground(scriptDefinition: ScriptDefinition): Boolean = false
 
     /**
      * Implementation should load configuration and call `context.saveConfiguration`.

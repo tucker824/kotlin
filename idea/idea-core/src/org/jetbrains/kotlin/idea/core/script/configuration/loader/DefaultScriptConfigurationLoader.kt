@@ -19,7 +19,7 @@ import kotlin.script.experimental.dependencies.AsyncDependenciesResolver
 
 internal class DefaultScriptConfigurationLoader(val project: Project) :
     ScriptConfigurationLoader {
-    override fun isAsync(scriptDefinition: ScriptDefinition): Boolean =
+    override fun shouldRunInBackground(scriptDefinition: ScriptDefinition): Boolean =
         scriptDefinition
             .asLegacyOrNull<KotlinScriptDefinition>()
             ?.dependencyResolver

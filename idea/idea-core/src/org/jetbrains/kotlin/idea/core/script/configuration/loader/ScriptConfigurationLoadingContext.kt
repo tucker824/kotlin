@@ -12,6 +12,12 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResu
 interface ScriptConfigurationLoadingContext {
     fun getCachedConfiguration(file: VirtualFile): CachedConfiguration?
 
+    /**
+     * Save [newResult] for [file] into caches and update highlighting.
+     *
+     * @param skipNotification forces loading new configuration even if auto reload is disabled.
+     * @sample DefaultScriptConfigurationLoader.loadDependencies
+     */
     fun saveConfiguration(
         file: VirtualFile,
         newResult: ScriptCompilationConfigurationResult,

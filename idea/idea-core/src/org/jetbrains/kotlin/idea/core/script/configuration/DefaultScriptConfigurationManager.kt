@@ -189,7 +189,7 @@ internal class DefaultScriptConfigurationManager(project: Project) :
         if (!ScriptDefinitionsManager.getInstance(project).isReady()) return
         val scriptDefinition = file.findScriptDefinition() ?: return
 
-        val (async, sync) = loaders.partition { it.isAsync(scriptDefinition) }
+        val (async, sync) = loaders.partition { it.shouldRunInBackground(scriptDefinition) }
 
         sync.forEach {
             if (it.loadDependencies(isFirstLoad, virtualFile, scriptDefinition, loadingContext)) {
@@ -243,62 +243,58 @@ internal class DefaultScriptConfigurationManager(project: Project) :
         override fun getCachedConfiguration(file: VirtualFile): CachedConfiguration? =
             this@DefaultScriptConfigurationManager.getCachedConfiguration(file)
 
-        /**
-         * Save [newResult] for [file] into caches and update highlighting.
-         * Should be called inside `rootsManager.transaction { ... }`.
-         *
-         * @param skipNotification forces loading new configuration even if auto reload is disabled.
-         *
-         * @sample ScriptConfigurationManager.getConfiguration
-         */
-        override fun saveConfiguration(
-            file: VirtualFile,
-            newResult: ScriptCompilationConfigurationResult,
-            skipNotification: Boolean
-        ) {
-            saveLock.withLock {
-                debug(file) { "configuration received = $newResult" }
+        override fun saveConfiguration(file: VirtualFile, newResult: ScriptCompilationConfigurationResult, skipNotification: Boolean) {
+            this@DefaultScriptConfigurationManager.saveConfiguration(file, newResult, skipNotification)
+        }
+    }
 
-                saveReports(file, newResult.reports)
+    private fun saveConfiguration(
+        file: VirtualFile,
+        newResult: ScriptCompilationConfigurationResult,
+        skipNotification: Boolean
+    ) {
+        saveLock.withLock {
+            debug(file) { "configuration received = $newResult" }
 
-                val newConfiguration = newResult.valueOrNull()
-                if (newConfiguration != null) {
-                    val oldConfiguration = getCachedConfiguration(file)?.configuration
-                    if (oldConfiguration == newConfiguration) {
-                        file.removeScriptDependenciesNotificationPanel(project)
-                    } else {
-                        val autoReload = skipNotification
-                                || oldConfiguration == null
-                                || KotlinScriptingSettings.getInstance(project).isAutoReloadEnabled
-                                || ApplicationManager.getApplication().isUnitTestMode
+            saveReports(file, newResult.reports)
 
-                        if (autoReload) {
-                            if (oldConfiguration != null) {
-                                file.removeScriptDependenciesNotificationPanel(project)
-                            }
-                            saveChangedConfiguration(file, newConfiguration)
-                        } else {
-                            debug(file) {
-                                "configuration changed, notification is shown: old = $oldConfiguration, new = $newConfiguration"
-                            }
-                            synchronized(notApplied) {
-                                notApplied[file] = CachedConfiguration(cache, file, newConfiguration)
-                            }
-                            file.addScriptDependenciesNotificationPanel(
-                                newConfiguration, project,
-                                onClick = {
-                                    file.removeScriptDependenciesNotificationPanel(project)
-                                    rootsIndexer.transaction {
-                                        saveChangedConfiguration(file, it)
-                                    }
-                                },
-                                onHide = {
-                                    synchronized(notApplied) {
-                                        notApplied.remove(file)
-                                    }
-                                }
-                            )
+            val newConfiguration = newResult.valueOrNull()
+            if (newConfiguration != null) {
+                val oldConfiguration = getCachedConfiguration(file)?.configuration
+                if (oldConfiguration == newConfiguration) {
+                    file.removeScriptDependenciesNotificationPanel(project)
+                } else {
+                    val autoReload = skipNotification
+                            || oldConfiguration == null
+                            || KotlinScriptingSettings.getInstance(project).isAutoReloadEnabled
+                            || ApplicationManager.getApplication().isUnitTestMode
+
+                    if (autoReload) {
+                        if (oldConfiguration != null) {
+                            file.removeScriptDependenciesNotificationPanel(project)
                         }
+                        saveChangedConfiguration(file, newConfiguration)
+                    } else {
+                        debug(file) {
+                            "configuration changed, notification is shown: old = $oldConfiguration, new = $newConfiguration"
+                        }
+                        synchronized(notApplied) {
+                            notApplied[file] = CachedConfiguration(cache, file, newConfiguration)
+                        }
+                        file.addScriptDependenciesNotificationPanel(
+                            newConfiguration, project,
+                            onClick = {
+                                file.removeScriptDependenciesNotificationPanel(project)
+                                rootsIndexer.transaction {
+                                    saveChangedConfiguration(file, it)
+                                }
+                            },
+                            onHide = {
+                                synchronized(notApplied) {
+                                    notApplied.remove(file)
+                                }
+                            }
+                        )
                     }
                 }
             }
