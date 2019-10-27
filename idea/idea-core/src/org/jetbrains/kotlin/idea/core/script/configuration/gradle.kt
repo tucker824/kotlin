@@ -49,7 +49,8 @@ class GradleScriptListener : DefaultScriptChangeListener() {
 }
 
 class GradleScriptConfigurationLoader(project: Project) : DefaultScriptConfigurationLoader(project) {
-    private val useProjectImport = false // todo: registry key
+    private val useProjectImport: Boolean
+        get() = Registry.`is`("kotlin.gradle.scripts.useIdeaProjectImport", false)
 
     override fun shouldRunInBackground(scriptDefinition: ScriptDefinition): Boolean {
         return if (useProjectImport) false else super.shouldRunInBackground(scriptDefinition)
