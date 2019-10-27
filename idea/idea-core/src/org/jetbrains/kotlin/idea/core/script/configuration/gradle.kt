@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.idea.core.script.configuration
 
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -12,18 +13,21 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafPsiElement
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationInputs
 import org.jetbrains.kotlin.idea.core.script.configuration.listener.DefaultScriptChangeListener
 import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptConfigurationUpdater
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.DefaultScriptConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoadingContext
+import org.jetbrains.kotlin.idea.core.util.EDT
 import org.jetbrains.kotlin.idea.util.application.runReadAction
+import org.jetbrains.kotlin.idea.util.application.runWriteAction
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScriptInitializer
 import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
-import java.util.concurrent.atomic.AtomicLong
 
 class GradleScriptListener : DefaultScriptChangeListener() {
     private val listenGradleRelatedFiles = false // todo
@@ -57,13 +61,24 @@ class GradleScriptConfigurationLoader(project: Project) : DefaultScriptConfigura
         context: ScriptConfigurationLoadingContext
     ): Boolean {
         if (!isGradleKotlinScript(virtualFile)) return false
-        if (!useProjectImport) return super.loadDependencies(isFirstLoad, virtualFile, scriptDefinition, context)
 
-        // do nothing, project import notification will be already showed
-        // and configuration for gradle build scripts will be saved at the end of import
-        // todo: use default configuration loader for out-of-project scripts?
+        if (useProjectImport) {
+            // do nothing, project import notification will be already showed
 
-        return true
+            // and configuration for gradle build scripts will be saved at the end of import
+            // todo: use default configuration loader for out-of-project scripts?
+
+            return true
+        } else {
+            // Gradle read files from FS
+            GlobalScope.launch(EDT(project)) {
+                runWriteAction {
+                    FileDocumentManager.getInstance().saveAllDocuments()
+                }
+            }
+
+            return super.loadDependencies(isFirstLoad, virtualFile, scriptDefinition, context)
+        }
     }
 
     override fun getInputsStamp(file: KtFile): CachedConfigurationInputs {
