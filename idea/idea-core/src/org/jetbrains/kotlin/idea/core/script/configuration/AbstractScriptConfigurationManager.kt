@@ -232,21 +232,20 @@ internal abstract class AbstractScriptConfigurationManager(
     ///////////////////
     // ScriptRootsCache
 
-    private val rootsLock = ReentrantLock()
+    private val classpathRootsLock = ReentrantLock()
     @Volatile
-    private var _roots: ScriptClassRootsCache? = null
+    private var _classpathRoots: ScriptClassRootsCache? = null
     private val classpathRoots: ScriptClassRootsCache
         get() {
-            val value1 = _roots
+            val value1 = _classpathRoots
             if (value1 != null) return value1
 
-            rootsLock.withLock {
-                val value2 = _roots
+            classpathRootsLock.withLock {
+                val value2 = _classpathRoots
                 if (value2 != null) return value2
 
-                val value3 =
-                    ScriptClassRootsCache(project, cache)
-                _roots = value3
+                val value3 = ScriptClassRootsCache(project, cache)
+                _classpathRoots = value3
                 return value3
             }
         }
@@ -254,8 +253,8 @@ internal abstract class AbstractScriptConfigurationManager(
     private fun clearClassRootsCaches() {
         debug { "class roots caches cleared" }
 
-        rootsLock.withLock {
-            _roots = null
+        classpathRootsLock.withLock {
+            _classpathRoots = null
         }
 
         val kotlinScriptDependenciesClassFinder =
