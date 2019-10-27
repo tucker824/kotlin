@@ -17,7 +17,7 @@ internal interface ScriptConfigurationLoader {
     fun shouldRunInBackground(scriptDefinition: ScriptDefinition): Boolean = false
 
     /**
-     * Implementation should load configuration and call `context.saveConfiguration`.
+     * Implementation should load configuration and call `context.suggestNewConfiguration` or `saveNewConfiguration`.
      *
      * @return true when this loader is applicable.
      */

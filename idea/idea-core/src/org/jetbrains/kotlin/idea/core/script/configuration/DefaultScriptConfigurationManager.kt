@@ -17,11 +17,13 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.*
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.*
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationFileAttributeCache
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.DefaultScriptChangeListener
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptChangeListener
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.*
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.DefaultScriptConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptOutsiderFileConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.BackgroundExecutor
-import org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptsListener
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptChangesNotifier
 import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
 import org.jetbrains.kotlin.idea.core.util.EDT
 import org.jetbrains.kotlin.psi.KtFile
@@ -31,37 +33,36 @@ import java.util.*
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.script.experimental.api.ScriptDiagnostic
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptConfigurationUpdater
 
 /**
  * Standard implementation of scripts configuration loading and caching
- * (we have plans for separate implementation for Gradle scripts).
+ * (we have plans to extract separate implementation for Gradle scripts).
  *
  * ## Loading initiation
  *
  * [getConfiguration] will be called when we need to show or analyze some script file.
  *
  * As described in [AbstractScriptConfigurationManager], configuration may be loaded from [cache]
- * or [reloadConfigurationInTransaction] will be called on [cache] miss.
+ * or [reloadOutOfDateConfiguration] will be called on [cache] miss.
  *
- * There are 2 tiers [cache]: memory and FS.
- * For now FS cache implemented by [ScriptConfigurationLoader] because we have not storing
- * classpath roots yet. As a workaround cache.all() will return only memory cached configurations.
- * So, for now we are indexing roots that loaded from FS with default [reloadConfigurationInTransaction]
- * mechanics.
- * todo(KT-34444): implement fs classpath roots cache
+ * There are 2 tiers [cache]: memory and FS. For now FS cache implemented by [ScriptConfigurationLoader]
+ * because we are not storing classpath roots yet. As a workaround cache.all() will return only memory
+ * cached configurations.  So, for now we are indexing roots that loaded from FS with
+ * default [reloadOutOfDateConfiguration] mechanics. todo(KT-34444): implement fs classpath roots cache
  *
- * [listener] will initiate scripts configuration reloading:
- *  - configuration will be reloaded after editor activation, even it is already up-to-date
- *    this is required for Gradle scripts, since it's classpath may depend on other files (`.properties` for example)
- *  - after each typing [ensureUpToDate] will be called
+ * [notifier] will call first applicable [listeners] when editor is activated or document changed.
+ * Listener may call [updater] to invalidate configuration and schedule reloading.
  *
- * Also, [ensureUpToDate] may be called from [UnusedSymbolInspection] to ensure that configuration of all scripts
- * containing some symbol are up-to-date. Note: it makes sence only in case of "auto apply" mode and sync loader.
+ * Also, [ScriptConfigurationUpdater.ensureConfigurationUpToDate] may be called from [UnusedSymbolInspection]
+ * to ensure that configuration of all scripts containing some symbol are up-to-date or try load it in sync.
+ * Note: it makes sense only in case of "auto apply" mode and sync loader, in other cases all symbols just
+ * will be treated as used.
  *
  * ## Loading
  *
- * When requested, configuration will be loaded using one of [loaders].
- * Only first [ScriptConfigurationLoader] will be used. It can work synchronously or asynchronously.
+ * When requested, configuration will be loaded using first applicable [loaders].
+ * It can work synchronously or asynchronously.
  *
  * Synchronous loader will be called just immediately. Despite this, its result may not be applied immediately,
  * see next section for details.
@@ -90,19 +91,25 @@ import kotlin.script.experimental.api.ScriptDiagnostic
  * - invalid, loading
  * - invalid, waiting for apply
  *
- * [reloadConfigurationInTransaction] guard this states. See it's docs for more details.
+ * [reloadOutOfDateConfiguration] guard this states. See it's docs for more details.
  */
 internal class DefaultScriptConfigurationManager(project: Project) :
     AbstractScriptConfigurationManager(project) {
     private val backgroundExecutor = BackgroundExecutor(project, rootsIndexer)
-    private val listener = ScriptsListener(project, this)
 
-    private val loaders = listOf(
+    private val loaders: List<ScriptConfigurationLoader> = listOf(
         ScriptOutsiderFileConfigurationLoader(project),
         ScriptConfigurationFileAttributeCache(project),
         GradleScriptConfigurationLoader(project),
         DefaultScriptConfigurationLoader(project)
     )
+
+    private val listeners: List<ScriptChangeListener> = listOf(
+        GradleScriptListener(),
+        DefaultScriptChangeListener()
+    )
+
+    private val notifier = ScriptChangesNotifier(project, updater, listeners)
 
     /**
      * Loaded but not applied result.
@@ -131,7 +138,7 @@ internal class DefaultScriptConfigurationManager(project: Project) :
      * Each files may be in on of the states described below:
      * - scriptDefinition is not ready. `ScriptDefinitionsManager.getInstance(project).isReady() == false`.
      * [clearConfigurationCachesAndRehighlight] will be called when [ScriptDefinitionsManager] will be ready
-     * which will call cause [reloadConfigurationInTransaction] for opened editors.
+     * which will call [reloadOutOfDateConfiguration] for opened editors.
      * - unknown. When [isFirstLoad] true (`cache[file] == null`).
      * - up-to-date. `cache[file]?.upToDate == true`.
      * - invalid, in queue. `cache[file]?.upToDate == false && file in backgroundExecutor`.
@@ -140,9 +147,9 @@ internal class DefaultScriptConfigurationManager(project: Project) :
      *
      * Async:
      * - up-to-date:
-     *   [reloadConfigurationInTransaction] will not be called.
+     *   [reloadOutOfDateConfiguration] will not be called.
      * - `unknown` and `invalid, in queue`:
-     *   Concurrent async loading will be guarded by ensureSchedule
+     *   Concurrent async loading will be guarded by `backgroundExecutor.ensureScheduled`
      *   (only one task per file will be scheduled at same time)
      * - `invalid`:
      *   Loading should be rescheduled, since the work already started for old input.
@@ -153,12 +160,12 @@ internal class DefaultScriptConfigurationManager(project: Project) :
      *
      * Sync:
      * - up-to-date:
-     *   [reloadConfigurationInTransaction] will not be called.
+     *   [reloadOutOfDateConfiguration] will not be called.
      * - all other states, i.e: `unknown`, `invalid, in queue`, `invalid, loading` and `invalid, ready for apply`:
      *   everything will be computed just in place, possible concurrently.
-     *   [saveConfiguration] calls will be serialized by the [saveLock]
+     *   [suggestOrSaveConfiguration] calls will be serialized by the [saveLock]
      */
-    override fun reloadConfigurationInTransaction(
+    override fun reloadOutOfDateConfiguration(
         file: KtFile,
         isFirstLoad: Boolean,
         loadEvenWillNotBeApplied: Boolean,
@@ -231,11 +238,11 @@ internal class DefaultScriptConfigurationManager(project: Project) :
             this@DefaultScriptConfigurationManager.getCachedConfiguration(file)
 
         override fun suggestNewConfiguration(file: VirtualFile, newResult: LoadedScriptConfiguration) {
-            this@DefaultScriptConfigurationManager.suggestOrSaveConfiguration(file, newResult, false)
+            suggestOrSaveConfiguration(file, newResult, false)
         }
 
         override fun saveNewConfiguration(file: VirtualFile, newResult: LoadedScriptConfiguration) {
-            this@DefaultScriptConfigurationManager.suggestOrSaveConfiguration(file, newResult, true)
+            suggestOrSaveConfiguration(file, newResult, true)
         }
     }
 

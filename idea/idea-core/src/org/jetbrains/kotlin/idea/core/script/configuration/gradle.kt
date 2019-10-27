@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.idea.core.script.configuration
 
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -14,6 +13,8 @@ import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationInputs
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.DefaultScriptChangeListener
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptConfigurationUpdater
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.DefaultScriptConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoadingContext
 import org.jetbrains.kotlin.idea.util.application.runReadAction
@@ -22,6 +23,25 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScriptInitializer
 import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
+import java.util.concurrent.atomic.AtomicLong
+
+class GradleScriptListener : DefaultScriptChangeListener() {
+    private val listenGradleRelatedFiles = false // todo
+
+    override fun editorActivated(file: KtFile, updater: ScriptConfigurationUpdater): Boolean {
+        if (!isGradleKotlinScript(file.virtualFile)) return false
+        if (listenGradleRelatedFiles) {
+            updater.ensureUpToDatedConfigurationSuggested(file)
+            // todo: force reload if related files changed
+        } else {
+            // configuration will be reloaded after editor activation, even it is already up-to-date
+            // this is required for Gradle scripts, since it's classpath may depend on other files (`.properties` for example)
+            updater.forceConfigurationReload(file)
+        }
+
+        return true
+    }
+}
 
 class GradleScriptConfigurationLoader(project: Project) : DefaultScriptConfigurationLoader(project) {
     private val useProjectImport = false // todo: registry key
@@ -37,16 +57,13 @@ class GradleScriptConfigurationLoader(project: Project) : DefaultScriptConfigura
         context: ScriptConfigurationLoadingContext
     ): Boolean {
         if (!isGradleKotlinScript(virtualFile)) return false
+        if (!useProjectImport) return super.loadDependencies(isFirstLoad, virtualFile, scriptDefinition, context)
 
-        if (useProjectImport) {
-            // do nothing, project import notification will be already showed
-            // and configuration for gradle build scripts will be saved at the end of import
-            // todo: use default configuration loader for out-of-project scripts?
-            return true
-        } else {
-            super.loadDependencies(isFirstLoad, virtualFile, scriptDefinition, context)
-            return true
-        }
+        // do nothing, project import notification will be already showed
+        // and configuration for gradle build scripts will be saved at the end of import
+        // todo: use default configuration loader for out-of-project scripts?
+
+        return true
     }
 
     override fun getInputsStamp(file: KtFile): CachedConfigurationInputs {
@@ -55,8 +72,7 @@ class GradleScriptConfigurationLoader(project: Project) : DefaultScriptConfigura
 }
 
 data class GradleKotlinScriptConfigurationInputs(
-    val buildScriptAndPluginsSections: String,
-    val relatedFilesModificationsTimestamp: Long
+    val buildScriptAndPluginsSections: String
 ) : CachedConfigurationInputs {
     override fun isUpToDate(project: Project, file: VirtualFile, ktFile: KtFile?): Boolean {
         val actualStamp = getGradleScriptInputsStamp(project, file, ktFile)
@@ -99,16 +115,7 @@ private fun getGradleScriptInputsStamp(
                     }
                 }
 
-            GradleKotlinScriptConfigurationInputs(
-                result.toString(),
-                ServiceManager.getService(project, GradleRelatedFilesListener::class.java)?.lastModified
-                    ?: Long.MIN_VALUE
-            )
+            GradleKotlinScriptConfigurationInputs(result.toString())
         } else null
     }
-}
-
-class GradleRelatedFilesListener {
-    @Volatile
-    var lastModified: Long = Long.MIN_VALUE
 }

@@ -30,6 +30,7 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.idea.caches.project.getAllProjectSdks
 import org.jetbrains.kotlin.idea.core.script.configuration.AbstractScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationSnapshot
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptConfigurationUpdater
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.LoadedScriptConfiguration
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDependenciesProvider
@@ -88,12 +89,9 @@ interface ScriptConfigurationManager {
     fun hasConfiguration(file: KtFile): Boolean
 
     /**
-     * Start configuration update for [files] it isn't already up-to-date and not started already.
-     *
-     * @param loadEvenWillNotBeApplied start loading even if the result will be not applied automatically
-     * @return true if all files is already up-to-date
+     * See [ScriptConfigurationUpdater].
      */
-    fun ensureUpToDate(files: List<KtFile>, loadEvenWillNotBeApplied: Boolean): Boolean
+    val updater: ScriptConfigurationUpdater
 
     /**
      * Clear all caches and re-highlighting opened scripts

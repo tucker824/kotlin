@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.idea.core.script.*
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager.Companion.toVfsRoots
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationSnapshot
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationCache
+import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptConfigurationUpdater
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptClassRootsCache
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptClassRootsIndexer
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.getKtFile
@@ -34,12 +35,11 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Abstract [ScriptConfigurationManager] implementation based on [cache] and [reloadConfigurationInTransaction].
- * Among this two methods concrete implementation should provide script changes listening
- * (by calling [ensureUpToDate] and [forceReload] on some event).
+ * Abstract [ScriptConfigurationManager] implementation based on [cache] and [reloadOutOfDateConfiguration].
+ * Among this two methods concrete implementation should provide script changes listening (by calling [updater] on some event).
  *
  * Basically all requests routed to [cache]. If there is no entry in [cache] or it is considered out-of-date,
- * then [reloadConfigurationInTransaction] will be called, which, in turn, should call [saveChangedConfiguration]
+ * then [reloadOutOfDateConfiguration] will be called, which, in turn, should call [saveChangedConfiguration]
  * immediately or in some future  (e.g. after user will click "apply context" or/and configuration will
  * be calculated by some background thread).
  *
@@ -66,12 +66,11 @@ internal abstract class AbstractScriptConfigurationManager(
      *
      * @param isFirstLoad may be set explicitly for optimization reasons (to avoid expensive fs cache access)
      * @param loadEvenWillNotBeApplied may should be set to false only on requests from particular editor, when
-     * user can see potential notification and accept new configuration. In other cases this should `false` since
-     * loaded configuration will be just leaved in hidden user notification cannot be used in any way, so there is
-     * no reason to load it
+     * user can see potential notification and accept new configuration. In other cases this should be `false` since
+     * loaded configuration will be just leaved in hidden user notification and cannot be used in any way.
      * @param forceSync should be used in tests only
      */
-    protected abstract fun reloadConfigurationInTransaction(
+    protected abstract fun reloadOutOfDateConfiguration(
         file: KtFile,
         isFirstLoad: Boolean = getCachedConfiguration(file.originalFile.virtualFile) == null,
         loadEvenWillNotBeApplied: Boolean = false,
@@ -109,13 +108,32 @@ internal abstract class AbstractScriptConfigurationManager(
 
         val ktFile = project.getKtFile(virtualFile, preloadedKtFile) ?: return null
         rootsIndexer.transaction {
-            reloadConfigurationInTransaction(ktFile, isFirstLoad = true)
+            reloadOutOfDateConfiguration(ktFile, isFirstLoad = true)
         }
 
         return getCachedConfiguration(virtualFile)?.configuration
     }
 
-    override fun ensureUpToDate(files: List<KtFile>, loadEvenWillNotBeApplied: Boolean): Boolean {
+    override val updater: ScriptConfigurationUpdater = object : ScriptConfigurationUpdater {
+        override fun ensureUpToDatedConfigurationSuggested(file: KtFile) {
+            reloadIfOutOfDate(listOf(file), true)
+        }
+
+        override fun ensureConfigurationUpToDate(files: List<KtFile>): Boolean {
+            return reloadIfOutOfDate(files, false)
+        }
+
+        override fun forceConfigurationReload(file: KtFile) {
+            val virtualFile = file.originalFile.virtualFile ?: return
+            cache.markOutOfDate(virtualFile)
+
+            rootsIndexer.transaction {
+                reloadOutOfDateConfiguration(file, loadEvenWillNotBeApplied = true)
+            }
+        }
+    }
+
+    private fun reloadIfOutOfDate(files: List<KtFile>, loadEvenWillNotBeApplied: Boolean): Boolean {
         if (!ScriptDefinitionsManager.getInstance(project).isReady()) return false
 
         var upToDate = true
@@ -126,7 +144,7 @@ internal abstract class AbstractScriptConfigurationManager(
                     val state = cache[virtualFile]
                     if (state == null || !state.inputs.isUpToDate(project, virtualFile, file)) {
                         upToDate = false
-                        reloadConfigurationInTransaction(
+                        reloadOutOfDateConfiguration(
                             file,
                             isFirstLoad = state == null,
                             loadEvenWillNotBeApplied = loadEvenWillNotBeApplied
@@ -139,15 +157,6 @@ internal abstract class AbstractScriptConfigurationManager(
         return upToDate
     }
 
-    internal fun forceReload(file: KtFile) {
-        val virtualFile = file.originalFile.virtualFile ?: return
-        cache.markOutOfDate(virtualFile)
-
-        rootsIndexer.transaction {
-            reloadConfigurationInTransaction(file, loadEvenWillNotBeApplied = true)
-        }
-    }
-
     @TestOnly
     internal fun updateScriptDependenciesSynchronously(file: PsiFile) {
         file.findScriptDefinition() ?: return
@@ -158,7 +167,7 @@ internal abstract class AbstractScriptConfigurationManager(
         if (cache[virtualFile]?.inputs?.isUpToDate(project, virtualFile, file) == true) return
 
         rootsIndexer.transaction {
-            reloadConfigurationInTransaction(file, isFirstLoad = true, forceSync = true)
+            reloadOutOfDateConfiguration(file, isFirstLoad = true, forceSync = true)
         }
     }
 
