@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.idea.core.script.*
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager.Companion.toVfsRoots
-import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfiguration
+import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationSnapshot
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationCache
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptClassRootsCache
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptClassRootsIndexer
@@ -29,11 +29,9 @@ import org.jetbrains.kotlin.idea.core.util.EDT
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.definitions.isNonScript
-import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import kotlin.script.experimental.api.valueOrNull
 
 /**
  * Abstract [ScriptConfigurationManager] implementation based on [cache] and [reloadConfigurationInTransaction].
@@ -89,7 +87,7 @@ internal abstract class AbstractScriptConfigurationManager(
     override fun getScriptClasspath(file: KtFile): List<VirtualFile> =
         toVfsRoots(getConfiguration(file)?.dependenciesClassPath.orEmpty())
 
-    fun getCachedConfiguration(file: VirtualFile?): CachedConfiguration? {
+    fun getCachedConfiguration(file: VirtualFile?): CachedConfigurationSnapshot? {
         if (file == null) return null
         return cache[file]
     }
@@ -126,7 +124,7 @@ internal abstract class AbstractScriptConfigurationManager(
                 val virtualFile = file.originalFile.virtualFile
                 if (virtualFile != null) {
                     val state = cache[virtualFile]
-                    if (state == null || !state.isUpToDate) {
+                    if (state == null || !state.inputs.isUpToDate(project, virtualFile, file)) {
                         upToDate = false
                         reloadConfigurationInTransaction(
                             file,
@@ -154,22 +152,22 @@ internal abstract class AbstractScriptConfigurationManager(
     internal fun updateScriptDependenciesSynchronously(file: PsiFile) {
         file.findScriptDefinition() ?: return
 
-        assert(file is KtFile) {
-            "PsiFile should be a KtFile, otherwise script dependencies cannot be loaded"
-        }
+        file as? KtFile ?: error("PsiFile $file should be a KtFile, otherwise script dependencies cannot be loaded")
 
-        if (cache[file.virtualFile]?.isUpToDate == true) return
+        val virtualFile = file.virtualFile
+        if (cache[virtualFile]?.inputs?.isUpToDate(project, virtualFile, file) == true) return
 
         rootsIndexer.transaction {
-            reloadConfigurationInTransaction(file as KtFile, isFirstLoad = true, forceSync = true)
+            reloadConfigurationInTransaction(file, isFirstLoad = true, forceSync = true)
         }
     }
 
     protected open fun saveChangedConfiguration(
         file: VirtualFile,
-        newConfiguration: ScriptCompilationConfigurationWrapper?
+        newConfigurationSnapshot: CachedConfigurationSnapshot?
     ) {
         rootsIndexer.checkInTransaction()
+        val newConfiguration = newConfigurationSnapshot?.configuration
         debug(file) { "configuration changed = $newConfiguration" }
 
         if (newConfiguration != null) {
@@ -177,7 +175,7 @@ internal abstract class AbstractScriptConfigurationManager(
                 rootsIndexer.markNewRoot(file, newConfiguration)
             }
 
-            this.cache[file] = newConfiguration
+            cache[file] = newConfigurationSnapshot
 
             clearClassRootsCaches()
         }
@@ -187,14 +185,6 @@ internal abstract class AbstractScriptConfigurationManager(
 
     private fun hasNotCachedRoots(configuration: ScriptCompilationConfigurationWrapper): Boolean {
         return classpathRoots.hasNotCachedRoots(configuration)
-    }
-
-    override fun saveCompilationConfigurationAfterImport(files: List<Pair<VirtualFile, ScriptCompilationConfigurationResult>>) {
-        rootsIndexer.transaction {
-            for ((file, result) in files) {
-                saveChangedConfiguration(file, result.valueOrNull())
-            }
-        }
     }
 
     /**

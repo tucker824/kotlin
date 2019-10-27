@@ -8,7 +8,7 @@ package org.jetbrains.kotlin.idea.core.script.configuration.cache
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.configuration.loader.LoadedScriptConfiguration
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoadingContext
 import org.jetbrains.kotlin.idea.core.script.debug
@@ -31,7 +31,7 @@ internal class ScriptConfigurationFileAttributeCache(
     val project: Project
 ) : ScriptConfigurationLoader {
     /**
-     * todo: this should be changed to storing all roots in the persistent file cache
+     * todo(KT-34444): this should be changed to storing all roots in the persistent file cache
      */
     override fun loadDependencies(
         isFirstLoad: Boolean,
@@ -42,7 +42,9 @@ internal class ScriptConfigurationFileAttributeCache(
         if (!isFirstLoad) return false
 
         val fromFs = load(virtualFile) ?: return false
-        context.saveConfiguration(virtualFile, fromFs.asSuccess(), true)
+        // todo(KT-34444): save inputs to fs
+        val result = LoadedScriptConfiguration(CachedConfigurationInputs.OutOfDate, listOf(), fromFs)
+        context.saveNewConfiguration(virtualFile, result)
         return true
     }
 

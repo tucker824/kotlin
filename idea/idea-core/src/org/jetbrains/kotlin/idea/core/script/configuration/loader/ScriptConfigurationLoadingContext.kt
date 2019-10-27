@@ -6,21 +6,28 @@
 package org.jetbrains.kotlin.idea.core.script.configuration.loader
 
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfiguration
-import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
+import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationSnapshot
 
 interface ScriptConfigurationLoadingContext {
-    fun getCachedConfiguration(file: VirtualFile): CachedConfiguration?
+    fun getCachedConfiguration(file: VirtualFile): CachedConfigurationSnapshot?
 
     /**
      * Save [newResult] for [file] into caches and update highlighting.
      *
-     * @param skipNotification forces loading new configuration even if auto reload is disabled.
      * @sample DefaultScriptConfigurationLoader.loadDependencies
      */
-    fun saveConfiguration(
+    fun suggestNewConfiguration(
         file: VirtualFile,
-        newResult: ScriptCompilationConfigurationResult,
-        skipNotification: Boolean
+        newResult: LoadedScriptConfiguration
+    )
+
+    /**
+     * Save [newResult] for [file] into caches and update highlighting.
+     *
+     * @sample ScriptConfigurationFileAttributeCache.loadDependencies
+     */
+    fun saveNewConfiguration(
+        file: VirtualFile,
+        newResult: LoadedScriptConfiguration
     )
 }

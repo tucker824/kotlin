@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.idea.core.script.configuration.loader
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptConfigurationManager
 import org.jetbrains.kotlin.idea.highlighter.OutsidersPsiFileSupportUtils
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import kotlin.script.experimental.api.asSuccess
@@ -27,9 +26,9 @@ internal class ScriptOutsiderFileConfigurationLoader(val project: Project) :
             virtualFile
         ) ?: return false
 
-        val original = context.getCachedConfiguration(fileOrigin)?.configuration
+        val original = context.getCachedConfiguration(fileOrigin)
         if (original != null) {
-            context.saveConfiguration(virtualFile, original.asSuccess(), true)
+            context.saveNewConfiguration(virtualFile, LoadedScriptConfiguration(original.inputs, listOf(), original.configuration))
         }
 
         // todo(KT-34615): initiate loading configuration for original file and subscribe to it's result?

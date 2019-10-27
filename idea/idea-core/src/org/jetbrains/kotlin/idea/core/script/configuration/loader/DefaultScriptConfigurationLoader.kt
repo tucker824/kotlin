@@ -7,18 +7,19 @@ package org.jetbrains.kotlin.idea.core.script.configuration.loader
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationInputs
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.getKtFile
 import org.jetbrains.kotlin.idea.core.script.debug
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.KotlinScriptDefinition
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.LegacyResolverWrapper
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
+import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.dependencies.AsyncDependenciesResolver
 
-internal class DefaultScriptConfigurationLoader(val project: Project) :
-    ScriptConfigurationLoader {
+open class DefaultScriptConfigurationLoader(val project: Project) : ScriptConfigurationLoader {
     override fun shouldRunInBackground(scriptDefinition: ScriptDefinition): Boolean =
         scriptDefinition
             .asLegacyOrNull<KotlinScriptDefinition>()
@@ -36,13 +37,23 @@ internal class DefaultScriptConfigurationLoader(val project: Project) :
 
         debug(file) { "start dependencies loading" }
 
-        val result = refineScriptCompilationConfiguration(
+        val scriptingApiResult = refineScriptCompilationConfiguration(
             KtFileScriptSource(file), scriptDefinition, file.project
         )
-        context.saveConfiguration(virtualFile, result, false)
+
+        val result = LoadedScriptConfiguration(
+            getInputsStamp(file),
+            scriptingApiResult.reports,
+            scriptingApiResult.valueOrNull()
+        )
+
+        context.suggestNewConfiguration(virtualFile, result)
 
         debug(file) { "finish dependencies loading" }
 
         return true
     }
+
+    protected open fun getInputsStamp(file: KtFile): CachedConfigurationInputs =
+        CachedConfigurationInputs.PsiModificationStamp(file.modificationStamp)
 }

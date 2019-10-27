@@ -5,25 +5,33 @@
 
 package org.jetbrains.kotlin.idea.core.script.configuration.cache
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 
-data class CachedConfiguration(
-    val cache: ScriptConfigurationCache,
-    val file: VirtualFile,
-    val configuration: ScriptCompilationConfigurationWrapper,
-    val inputs: Any? = cache.getInputs(file)
-) {
-    val isUpToDate
-        get() = cache.getInputs(file) == inputs
+interface CachedConfigurationInputs {
+    fun isUpToDate(project: Project, file: VirtualFile, ktFile: KtFile? = null): Boolean
+
+    object OutOfDate : CachedConfigurationInputs {
+        override fun isUpToDate(project: Project, file: VirtualFile, ktFile: KtFile?): Boolean = false
+    }
+
+    data class PsiModificationStamp(val modificationStamp: Long) : CachedConfigurationInputs {
+        override fun isUpToDate(project: Project, file: VirtualFile, ktFile: KtFile?): Boolean =
+            ktFile?.modificationStamp == modificationStamp
+    }
 }
 
-interface ScriptConfigurationCache {
-    fun getInputs(file: VirtualFile): Any
+data class CachedConfigurationSnapshot(
+    val inputs: CachedConfigurationInputs,
+    val configuration: ScriptCompilationConfigurationWrapper
+)
 
-    operator fun get(file: VirtualFile): CachedConfiguration?
-    operator fun set(file: VirtualFile, configuration: ScriptCompilationConfigurationWrapper)
+interface ScriptConfigurationCache {
+    operator fun get(file: VirtualFile): CachedConfigurationSnapshot?
+    operator fun set(file: VirtualFile, configurationSnapshot: CachedConfigurationSnapshot)
     fun markOutOfDate(file: VirtualFile)
 
-    fun all(): Collection<CachedConfiguration>
+    fun all(): Collection<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>>
 }

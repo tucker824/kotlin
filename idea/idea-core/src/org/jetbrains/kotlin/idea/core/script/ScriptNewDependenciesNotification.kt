@@ -34,7 +34,7 @@ fun VirtualFile.removeScriptDependenciesNotificationPanel(project: Project) {
 fun VirtualFile.addScriptDependenciesNotificationPanel(
     compilationConfigurationResult: ScriptCompilationConfigurationWrapper,
     project: Project,
-    onClick: (ScriptCompilationConfigurationWrapper) -> Unit,
+    onClick: () -> Unit,
     onHide: () -> Unit
 ) {
     withSelectedEditor(project) { manager ->
@@ -73,7 +73,7 @@ private fun VirtualFile.withSelectedEditor(project: Project, f: FileEditor.(File
 private var FileEditor.notificationPanel: NewScriptDependenciesNotificationPanel? by UserDataProperty<FileEditor, NewScriptDependenciesNotificationPanel>(Key.create("script.dependencies.panel"))
 
 private class NewScriptDependenciesNotificationPanel(
-    onClick: (ScriptCompilationConfigurationWrapper) -> Unit,
+    onClick: () -> Unit,
     val compilationConfigurationResult: ScriptCompilationConfigurationWrapper,
     project: Project
 ) : EditorNotificationPanel() {
@@ -81,11 +81,11 @@ private class NewScriptDependenciesNotificationPanel(
     init {
         setText("There is a new script context available.")
         createComponentActionLabel("Apply context") {
-            onClick(compilationConfigurationResult)
+            onClick()
         }
 
         createComponentActionLabel("Enable auto-reload") {
-            onClick(compilationConfigurationResult)
+            onClick()
             KotlinScriptingSettings.getInstance(project).isAutoReloadEnabled = true
         }
     }

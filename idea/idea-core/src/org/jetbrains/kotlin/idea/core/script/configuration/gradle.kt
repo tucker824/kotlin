@@ -13,59 +13,100 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafPsiElement
-import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationInputsStampCalculator
+import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationInputs
+import org.jetbrains.kotlin.idea.core.script.configuration.loader.DefaultScriptConfigurationLoader
+import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoadingContext
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScriptInitializer
 import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
+import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 
-class GradleKotlinScriptConfigurationInputsStampCalculator(val project: Project) : ScriptConfigurationInputsStampCalculator {
-    override fun getInputsStamp(file: VirtualFile): Any? {
-        if (!isGradleKotlinScript(file)) return null
+class GradleScriptConfigurationLoader(project: Project) : DefaultScriptConfigurationLoader(project) {
+    private val useProjectImport = false // todo: registry key
 
-        return runReadAction {
-            val ktFile = PsiManager.getInstance(project).findFile(file) as? KtFile
+    override fun shouldRunInBackground(scriptDefinition: ScriptDefinition): Boolean {
+        return if (useProjectImport) false else super.shouldRunInBackground(scriptDefinition)
+    }
 
-            if (ktFile != null) {
-                val result = StringBuilder()
-                ktFile.script?.blockExpression
-                    ?.getChildrenOfType<KtScriptInitializer>()
-                    ?.forEach {
-                        val call = it.children.singleOrNull() as? KtCallExpression
-                        val callRef = call?.firstChild?.text
-                        if (callRef == "buildscript" || callRef == "plugins") {
-                            result.append(callRef)
-                            val lambda = call.lambdaArguments.singleOrNull()
-                            lambda?.accept(object : PsiRecursiveElementVisitor(false) {
-                                override fun visitElement(element: PsiElement) {
-                                    super.visitElement(element)
-                                    when (element) {
-                                        is PsiWhiteSpace -> if (element.text.contains("\n")) result.append("\n")
-                                        is LeafPsiElement -> result.append(element.text)
-                                    }
-                                }
-                            })
-                            result.append("\n")
-                        }
-                    }
+    override fun loadDependencies(
+        isFirstLoad: Boolean,
+        virtualFile: VirtualFile,
+        scriptDefinition: ScriptDefinition,
+        context: ScriptConfigurationLoadingContext
+    ): Boolean {
+        if (!isGradleKotlinScript(virtualFile)) return false
 
-                GradleKotlinScriptConfigurationInputs(
-                    result.toString(),
-                    ServiceManager.getService(project, GradleRelatedFilesListener::class.java)?.lastModified
-                        ?: Long.MIN_VALUE
-                )
-            } else null
+        if (useProjectImport) {
+            // do nothing, project import notification will be already showed
+            // and configuration for gradle build scripts will be saved at the end of import
+            // todo: use default configuration loader for out-of-project scripts?
+            return true
+        } else {
+            super.loadDependencies(isFirstLoad, virtualFile, scriptDefinition, context)
+            return true
         }
+    }
+
+    override fun getInputsStamp(file: KtFile): CachedConfigurationInputs {
+        return getGradleScriptInputsStamp(project, file.virtualFile, file) ?: super.getInputsStamp(file)
     }
 }
 
 data class GradleKotlinScriptConfigurationInputs(
     val buildScriptAndPluginsSections: String,
     val relatedFilesModificationsTimestamp: Long
-)
+) : CachedConfigurationInputs {
+    override fun isUpToDate(project: Project, file: VirtualFile, ktFile: KtFile?): Boolean {
+        val actualStamp = getGradleScriptInputsStamp(project, file, ktFile)
+        return actualStamp == this
+    }
+}
 
 fun isGradleKotlinScript(virtualFile: VirtualFile) = virtualFile.name.endsWith(".gradle.kts")
+
+private fun getGradleScriptInputsStamp(
+    project: Project,
+    file: VirtualFile,
+    givenKtFile: KtFile? = null
+): GradleKotlinScriptConfigurationInputs? {
+    if (!isGradleKotlinScript(file)) return null
+
+    return runReadAction {
+        val ktFile = givenKtFile ?: PsiManager.getInstance(project).findFile(file) as? KtFile
+
+        if (ktFile != null) {
+            val result = StringBuilder()
+            ktFile.script?.blockExpression
+                ?.getChildrenOfType<KtScriptInitializer>()
+                ?.forEach {
+                    val call = it.children.singleOrNull() as? KtCallExpression
+                    val callRef = call?.firstChild?.text
+                    if (callRef == "buildscript" || callRef == "plugins") {
+                        result.append(callRef)
+                        val lambda = call.lambdaArguments.singleOrNull()
+                        lambda?.accept(object : PsiRecursiveElementVisitor(false) {
+                            override fun visitElement(element: PsiElement) {
+                                super.visitElement(element)
+                                when (element) {
+                                    is PsiWhiteSpace -> if (element.text.contains("\n")) result.append("\n")
+                                    is LeafPsiElement -> result.append(element.text)
+                                }
+                            }
+                        })
+                        result.append("\n")
+                    }
+                }
+
+            GradleKotlinScriptConfigurationInputs(
+                result.toString(),
+                ServiceManager.getService(project, GradleRelatedFilesListener::class.java)?.lastModified
+                    ?: Long.MIN_VALUE
+            )
+        } else null
+    }
+}
 
 class GradleRelatedFilesListener {
     @Volatile

@@ -17,7 +17,6 @@ import com.intellij.psi.search.NonClasspathDirectoriesScope
 import com.intellij.util.containers.ConcurrentFactoryMap
 import org.jetbrains.kotlin.idea.caches.project.getAllProjectSdks
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfiguration
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationCache
 import org.jetbrains.kotlin.idea.core.script.debug
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
@@ -26,7 +25,7 @@ internal class ScriptClassRootsCache(
     private val project: Project,
     private val cache: ScriptConfigurationCache
 ) {
-    private val all: Collection<CachedConfiguration> get() = cache.all()
+    private val all: Collection<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> get() = cache.all()
     private fun getConfiguration(file: VirtualFile): ScriptCompilationConfigurationWrapper? = cache[file]?.configuration
 
     private fun getScriptSdk(compilationConfiguration: ScriptCompilationConfigurationWrapper?): Sdk? {
@@ -50,17 +49,17 @@ internal class ScriptClassRootsCache(
     fun getScriptSdk(file: VirtualFile): Sdk? = scriptsSdksCache[file]
 
     fun getFirstScriptsSdk(): Sdk? {
-        val firstCachedScript = all.firstOrNull()?.file ?: return null
+        val firstCachedScript = all.firstOrNull()?.first ?: return null
         return scriptsSdksCache[firstCachedScript]
     }
 
     private val allSdks by lazy {
-        all.mapNotNull { scriptsSdksCache[it.file] }
+        all.mapNotNull { scriptsSdksCache[it.first] }
             .distinct()
     }
 
     private val allNonIndexedSdks by lazy {
-        all.mapNotNull { scriptsSdksCache[it.file] }
+        all.mapNotNull { scriptsSdksCache[it.first] }
             .filterNonModuleSdk()
             .distinct()
     }
@@ -72,14 +71,14 @@ internal class ScriptClassRootsCache(
 
     val allDependenciesClassFiles by lazy {
         val sdkFiles = allNonIndexedSdks.flatMap { it.rootProvider.getFiles(OrderRootType.CLASSES).toList() }
-        val scriptDependenciesClasspath = all.flatMap { it.configuration.dependenciesClassPath }.distinct()
+        val scriptDependenciesClasspath = all.flatMap { it.second.dependenciesClassPath }.distinct()
 
         sdkFiles + ScriptConfigurationManager.toVfsRoots(scriptDependenciesClasspath)
     }
 
     val allDependenciesSources by lazy {
         val sdkSources = allNonIndexedSdks.flatMap { it.rootProvider.getFiles(OrderRootType.SOURCES).toList() }
-        val scriptDependenciesSources = all.flatMap { it.configuration.dependenciesSources }.distinct()
+        val scriptDependenciesSources = all.flatMap { it.second.dependenciesSources }.distinct()
 
         sdkSources + ScriptConfigurationManager.toVfsRoots(scriptDependenciesSources)
     }

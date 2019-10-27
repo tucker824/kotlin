@@ -14,25 +14,26 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrap
 import java.io.DataInput
 import java.io.DataOutput
 
-abstract class ScriptConfigurationMemoryCache(val project: Project) :
-    ScriptConfigurationCache {
+abstract class ScriptConfigurationMemoryCache(
+    val project: Project
+) : ScriptConfigurationCache {
     companion object {
         const val MAX_SCRIPTS_CACHED = 50
     }
 
-    private val memoryCache = SLRUMap<VirtualFile, CachedConfiguration>(MAX_SCRIPTS_CACHED, MAX_SCRIPTS_CACHED)
+    private val memoryCache = SLRUMap<VirtualFile, CachedConfigurationSnapshot>(MAX_SCRIPTS_CACHED, MAX_SCRIPTS_CACHED)
 
     @Synchronized
-    override operator fun get(file: VirtualFile): CachedConfiguration? {
+    override operator fun get(file: VirtualFile): CachedConfigurationSnapshot? {
         return memoryCache.get(file)
     }
 
 
     @Synchronized
-    override operator fun set(file: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
+    override operator fun set(file: VirtualFile, configurationSnapshot: CachedConfigurationSnapshot) {
         memoryCache.put(
             file,
-            CachedConfiguration(this, file, configuration)
+            configurationSnapshot
         )
     }
 
@@ -40,10 +41,10 @@ abstract class ScriptConfigurationMemoryCache(val project: Project) :
     override fun markOutOfDate(file: VirtualFile) {
         val old = memoryCache[file]
         if (old != null) {
-            memoryCache.put(file, old.copy(inputs = Any()))
+            memoryCache.put(file, old.copy(inputs = CachedConfigurationInputs.OutOfDate))
         }
     }
 
     @Synchronized
-    override fun all(): Collection<CachedConfiguration> = memoryCache.entrySet().map { it.value }
+    override fun all() = memoryCache.entrySet().map { it.key to it.value.configuration }
 }
