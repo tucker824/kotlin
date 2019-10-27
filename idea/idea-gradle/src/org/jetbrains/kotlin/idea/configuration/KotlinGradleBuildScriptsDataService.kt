@@ -24,9 +24,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.pom.Navigatable
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationInputs
+import org.jetbrains.kotlin.idea.core.script.configuration.getGradleScriptInputsStamp
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.LoadedScriptConfiguration
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
-import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
@@ -34,7 +34,6 @@ import org.jetbrains.plugins.gradle.model.data.GradleSourceSetData
 import org.jetbrains.plugins.gradle.settings.GradleExecutionSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
-import kotlin.script.experimental.api.ResultWithDiagnostics
 import kotlin.script.experimental.dependencies.ScriptDependencies
 
 class KotlinGradleBuildScriptsDataService : AbstractProjectDataService<GradleSourceSetData, Void>() {
@@ -65,11 +64,14 @@ class KotlinGradleBuildScriptsDataService : AbstractProjectDataService<GradleSou
             val scriptFile = File(buildScript.file)
             val virtualFile = VfsUtil.findFile(scriptFile.toPath(), true)!!
 
+            // todo(KT-34440): take inputs snapshot before starting import
+            val inputs = getGradleScriptInputsStamp(project, virtualFile)
+
             files.add(
                 Pair(
                     virtualFile,
                     LoadedScriptConfiguration(
-                        CachedConfigurationInputs.OutOfDate, // todo(KT-34440): take inputs snapshot before starting import
+                        inputs ?: CachedConfigurationInputs.OutOfDate,
                         listOf(),
                         ScriptCompilationConfigurationWrapper.FromLegacy(
                             VirtualFileScriptSource(virtualFile),

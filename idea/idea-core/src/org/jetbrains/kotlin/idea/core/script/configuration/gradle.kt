@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.idea.core.script.configuration
 
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
@@ -97,7 +98,7 @@ data class GradleKotlinScriptConfigurationInputs(
 
 fun isGradleKotlinScript(virtualFile: VirtualFile) = virtualFile.name.endsWith(".gradle.kts")
 
-private fun getGradleScriptInputsStamp(
+fun getGradleScriptInputsStamp(
     project: Project,
     file: VirtualFile,
     givenKtFile: KtFile? = null
