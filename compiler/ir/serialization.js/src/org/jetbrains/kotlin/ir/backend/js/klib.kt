@@ -321,6 +321,7 @@ fun serializeModuleIntoKlib(
     val metadataSerializer = KlibMetadataIncrementalSerializer(
         languageVersionSettings,
         metadataVersion,
+        moduleDescriptor,
         descriptorTable)
 
     fun serializeScope(fqName: FqName, memberScope: Collection<DeclarationDescriptor>): ByteArray {
