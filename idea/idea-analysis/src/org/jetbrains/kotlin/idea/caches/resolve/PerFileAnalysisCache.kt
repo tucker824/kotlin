@@ -62,6 +62,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
     private val bodyResolveCache = componentProvider.get<BodyResolveCache>()
 
     private val cache = HashMap<PsiElement, AnalysisResult>()
+    private var fileResult: AnalysisResult? = null
 
     fun getAnalysisResults(element: KtElement): AnalysisResult {
         assert(element.containingKtFile == file) { "Wrong file. Expected $file, but was ${element.containingKtFile}" }
@@ -91,16 +92,21 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
     }
 
     private fun getIncrementalAnalysisResult(): AnalysisResult? {
+        // move fileResult from cache if it is stored there
+        if (fileResult == null && cache.containsKey(file)) {
+            fileResult = cache[file]
+
+            // drop existed results for entire cache:
+            // if incremental analysis is applicable it will produce a single value for file
+            // otherwise those results are potentially stale
+            cache.clear()
+        }
+
         val inBlockModifications = file.inBlockModifications
         if (inBlockModifications.isNotEmpty()) {
             try {
                 // IF there is a cached result for ktFile and there are inBlockModifications
-                cache[file]?.let { result ->
-                    // drop existed results for entire cache:
-                    // if incremental analysis is applicable it will produce a single value for file
-                    // otherwise those results are potentially stale
-                    cache.clear()
-
+                fileResult = fileResult?.let { result ->
                     var analysisResult = result
                     for (inBlockModification in inBlockModifications) {
                         val resultCtx = analysisResult.bindingContext
@@ -131,14 +137,13 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
                         val newResult = analyze(inBlockModification, trace)
                         analysisResult = wrapResult(result, newResult, trace)
                     }
-                    cache[file] = analysisResult
-                    return analysisResult
+                    analysisResult
                 }
             } finally {
                 file.clearInBlockModifications()
             }
         }
-        return if (cache.size == 1) cache[file] else null
+        return fileResult
     }
 
     private fun lookUp(analyzableElement: KtElement): AnalysisResult? {
