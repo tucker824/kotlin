@@ -94,11 +94,6 @@ public class IrBytecodeTextTestGenerated extends AbstractIrBytecodeTextTest {
         runTest("compiler/testData/codegen/bytecodeText/constClosureOptimization.kt");
     }
 
-    @TestMetadata("constCoroutine.kt")
-    public void testConstCoroutine() throws Exception {
-        runTest("compiler/testData/codegen/bytecodeText/constCoroutine.kt");
-    }
-
     @TestMetadata("defaultMethodBody.kt")
     public void testDefaultMethodBody() throws Exception {
         runTest("compiler/testData/codegen/bytecodeText/defaultMethodBody.kt");
@@ -257,11 +252,6 @@ public class IrBytecodeTextTestGenerated extends AbstractIrBytecodeTextTest {
     @TestMetadata("noFlagAnnotations.kt")
     public void testNoFlagAnnotations() throws Exception {
         runTest("compiler/testData/codegen/bytecodeText/noFlagAnnotations.kt");
-    }
-
-    @TestMetadata("noInlineJavaProtectedConstants.kt")
-    public void testNoInlineJavaProtectedConstants() throws Exception {
-        runTest("compiler/testData/codegen/bytecodeText/noInlineJavaProtectedConstants.kt");
     }
 
     @TestMetadata("noNumberCheckCast.kt")
@@ -1078,11 +1068,6 @@ public class IrBytecodeTextTestGenerated extends AbstractIrBytecodeTextTest {
             KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
         }
 
-        @TestMetadata("accessorsForPrivateConstants.kt")
-        public void testAccessorsForPrivateConstants() throws Exception {
-            runTest("compiler/testData/codegen/bytecodeText/constProperty/accessorsForPrivateConstants.kt");
-        }
-
         public void testAllFilesPresentInConstProperty() throws Exception {
             KotlinTestUtils.assertAllTestsPresentByMetadata(this.getClass(), new File("compiler/testData/codegen/bytecodeText/constProperty"), Pattern.compile("^(.+)\\.kt$"), TargetBackend.JVM_IR, true);
         }
@@ -1105,11 +1090,6 @@ public class IrBytecodeTextTestGenerated extends AbstractIrBytecodeTextTest {
         @TestMetadata("nonConstValHasNoDefaultValue_after.kt")
         public void testNonConstValHasNoDefaultValue_after() throws Exception {
             runTest("compiler/testData/codegen/bytecodeText/constProperty/nonConstValHasNoDefaultValue_after.kt");
-        }
-
-        @TestMetadata("nonConstValHasNoDefaultValue_before.kt")
-        public void testNonConstValHasNoDefaultValue_before() throws Exception {
-            runTest("compiler/testData/codegen/bytecodeText/constProperty/nonConstValHasNoDefaultValue_before.kt");
         }
     }
 
@@ -1268,11 +1248,6 @@ public class IrBytecodeTextTestGenerated extends AbstractIrBytecodeTextTest {
             KotlinTestUtils.assertAllTestsPresentByMetadata(this.getClass(), new File("compiler/testData/codegen/bytecodeText/coroutines"), Pattern.compile("^(.+)\\.kt$"), TargetBackend.JVM_IR, true);
         }
 
-        @TestMetadata("crossinlineSuspendContinuation_1_2.kt")
-        public void testCrossinlineSuspendContinuation_1_2() throws Exception {
-            runTest("compiler/testData/codegen/bytecodeText/coroutines/crossinlineSuspendContinuation_1_2.kt");
-        }
-
         @TestMetadata("crossinlineSuspendContinuation_1_3.kt")
         public void testCrossinlineSuspendContinuation_1_3() throws Exception {
             runTest("compiler/testData/codegen/bytecodeText/coroutines/crossinlineSuspendContinuation_1_3.kt");
@@ -1281,11 +1256,6 @@ public class IrBytecodeTextTestGenerated extends AbstractIrBytecodeTextTest {
         @TestMetadata("doNotReassignContinuation.kt")
         public void testDoNotReassignContinuation() throws Exception {
             runTest("compiler/testData/codegen/bytecodeText/coroutines/doNotReassignContinuation.kt");
-        }
-
-        @TestMetadata("doNotReassignContinuation_1_2.kt")
-        public void testDoNotReassignContinuation_1_2() throws Exception {
-            runTest("compiler/testData/codegen/bytecodeText/coroutines/doNotReassignContinuation_1_2.kt");
         }
 
         @TestMetadata("returnUnitInLambda.kt")
@@ -1306,16 +1276,6 @@ public class IrBytecodeTextTestGenerated extends AbstractIrBytecodeTextTest {
         @TestMetadata("varValueConflictsWithTableSameSort.kt")
         public void testVarValueConflictsWithTableSameSort() throws Exception {
             runTest("compiler/testData/codegen/bytecodeText/coroutines/varValueConflictsWithTableSameSort.kt");
-        }
-
-        @TestMetadata("varValueConflictsWithTableSameSort_1_2.kt")
-        public void testVarValueConflictsWithTableSameSort_1_2() throws Exception {
-            runTest("compiler/testData/codegen/bytecodeText/coroutines/varValueConflictsWithTableSameSort_1_2.kt");
-        }
-
-        @TestMetadata("varValueConflictsWithTable_1_2.kt")
-        public void testVarValueConflictsWithTable_1_2() throws Exception {
-            runTest("compiler/testData/codegen/bytecodeText/coroutines/varValueConflictsWithTable_1_2.kt");
         }
 
         @TestMetadata("compiler/testData/codegen/bytecodeText/coroutines/debug")
