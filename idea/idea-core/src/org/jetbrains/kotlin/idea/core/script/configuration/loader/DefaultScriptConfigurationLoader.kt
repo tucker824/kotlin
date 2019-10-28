@@ -37,12 +37,13 @@ open class DefaultScriptConfigurationLoader(val project: Project) : ScriptConfig
 
         debug(file) { "start dependencies loading" }
 
+        val inputs = getInputsStamp(file)
         val scriptingApiResult = refineScriptCompilationConfiguration(
             KtFileScriptSource(file), scriptDefinition, file.project
         )
 
         val result = LoadedScriptConfiguration(
-            getInputsStamp(file),
+            inputs,
             scriptingApiResult.reports,
             scriptingApiResult.valueOrNull()
         )

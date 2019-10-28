@@ -66,7 +66,6 @@ class GradleScriptConfigurationLoader(project: Project) : DefaultScriptConfigura
 
         if (useProjectImport) {
             // do nothing, project import notification will be already showed
-
             // and configuration for gradle build scripts will be saved at the end of import
             // todo: use default configuration loader for out-of-project scripts?
 
