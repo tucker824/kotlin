@@ -361,14 +361,7 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractIrBlackBoxCodegenTest> {
-            model(
-                "codegen/box",
-                targetBackend = TargetBackend.JVM_IR,
-                excludeDirs = listOf(
-                    "ieee754/oldLanguageVersions",
-                    "operatorConventions/oldLanguageVersions"
-                )
-            )
+            model("codegen/box", targetBackend = TargetBackend.JVM_IR, excludeDirs = listOf("oldLanguageVersions"))
         }
 
         testClass<AbstractIrBlackBoxAgainstJavaCodegenTest> {
@@ -441,13 +434,7 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractIrBytecodeTextTest> {
-            model(
-                "codegen/bytecodeText",
-                targetBackend = TargetBackend.JVM_IR,
-                excludeDirs = listOf(
-                    "ieee754/oldLanguageVersions"
-                )
-            )
+            model("codegen/bytecodeText", targetBackend = TargetBackend.JVM_IR, excludeDirs = listOf("oldLanguageVersions"))
         }
     }
 
