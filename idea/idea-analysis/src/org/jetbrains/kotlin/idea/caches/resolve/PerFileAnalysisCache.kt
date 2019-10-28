@@ -115,7 +115,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
                             if (resultCtx is StackedCompositeBindingContextTrace.StackedCompositeBindingContext) resultCtx else null
 
                         // no incremental analysis IF it is not applicable
-                        if (stackedCtx?.isIncrementalAnalysisApplicable() == false) return null
+                        if (stackedCtx?.isIncrementalAnalysisApplicable() == false) return@let null
 
                         val trace: StackedCompositeBindingContextTrace =
                             if (stackedCtx != null && stackedCtx.element() == inBlockModification) {
