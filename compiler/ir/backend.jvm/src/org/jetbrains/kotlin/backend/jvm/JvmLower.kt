@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.backend.jvm
 
 import org.jetbrains.kotlin.backend.common.CommonBackendContext
+import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.lower.*
 import org.jetbrains.kotlin.backend.common.lower.loops.forLoopsPhase
 import org.jetbrains.kotlin.backend.common.phaser.*
@@ -128,6 +129,17 @@ internal val localDeclarationsPhase = makeIrFilePhase<CommonBackendContext>(
     name = "JvmLocalDeclarations",
     description = "Move local declarations to classes",
     prerequisite = setOf(callableReferencePhase, sharedVariablesPhase)
+)
+
+private val computeStringTrimPhase = makeIrFilePhase<JvmBackendContext>(
+    { context ->
+        if (context.state.canReplaceStdlibRuntimeApiBehavior)
+            StringTrimLowering(context)
+        else
+            FileLoweringPass.Empty
+    },
+    name = "StringTrimLowering",
+    description = "Compute trimIndent and trimMargin operations on constant strings"
 )
 
 private val defaultArgumentStubPhase = makeIrFilePhase(
