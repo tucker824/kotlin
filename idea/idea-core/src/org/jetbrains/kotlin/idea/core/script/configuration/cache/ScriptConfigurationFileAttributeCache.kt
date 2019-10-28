@@ -7,24 +7,20 @@ package org.jetbrains.kotlin.idea.core.script.configuration.cache
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiManager
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.LoadedScriptConfiguration
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoadingContext
+import org.jetbrains.kotlin.idea.core.script.configuration.utils.getKtFile
 import org.jetbrains.kotlin.idea.core.script.debug
 import org.jetbrains.kotlin.idea.core.util.*
-import org.jetbrains.kotlin.idea.util.application.runReadAction
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper.FromCompilationConfiguration
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper.FromLegacy
-import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import java.io.*
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
-import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.dependencies.ScriptDependencies
 
 internal class ScriptConfigurationFileAttributeCache(
@@ -51,15 +47,14 @@ internal class ScriptConfigurationFileAttributeCache(
     private fun load(
         virtualFile: VirtualFile
     ): ScriptCompilationConfigurationWrapper? {
+        val ktFile = project.getKtFile(virtualFile) ?: return null
+        val scriptSource = KtFileScriptSource(ktFile)
+
         val configurationFromAttributes =
             virtualFile.scriptCompilationConfiguration?.let {
-                FromCompilationConfiguration(VirtualFileScriptSource(virtualFile), it)
+                FromCompilationConfiguration(scriptSource, it)
             } ?: virtualFile.scriptDependencies?.let {
-                val ktFile = runReadAction { PsiManager.getInstance(project).findFile(virtualFile) as? KtFile }
-                if (ktFile != null) {
-                    val scriptDefinition = ktFile.findScriptDefinition()
-                    FromLegacy(KtFileScriptSource(ktFile), it, scriptDefinition)
-                } else null
+                FromLegacy(scriptSource, it, ktFile.findScriptDefinition())
             } ?: return null
 
 
