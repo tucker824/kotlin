@@ -204,6 +204,10 @@ class ExpressionCodegen(
     }
 
     private fun generateNonNullAssertions() {
+        // TODO: the inliner does not like the assertions. Fix it.
+        if (irFunction.parentAsClass.origin == JvmLoweredDeclarationOrigin.CONTINUATION_CLASS) {
+            return
+        }
         if (state.isParamAssertionsDisabled)
             return
 

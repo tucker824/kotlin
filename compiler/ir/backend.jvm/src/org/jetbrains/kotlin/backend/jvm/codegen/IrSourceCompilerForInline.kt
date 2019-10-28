@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.backend.jvm.codegen
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.backend.common.CodegenUtil
 import org.jetbrains.kotlin.backend.common.ir.ir2string
 import org.jetbrains.kotlin.backend.jvm.lower.MultifileFacadeFileEntry
 import org.jetbrains.kotlin.codegen.BaseExpressionCodegen
@@ -23,13 +24,16 @@ import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrMemberAccessExpression
+import org.jetbrains.kotlin.ir.util.nameForIrSerialization
 import org.jetbrains.kotlin.ir.util.parentAsClass
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.load.java.JvmAbi
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodGenericSignature
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
+import org.jetbrains.kotlin.resolve.source.getPsi
 import org.jetbrains.org.objectweb.asm.*
 import org.jetbrains.org.objectweb.asm.commons.InstructionAdapter
 import org.jetbrains.org.objectweb.asm.commons.Method
@@ -152,11 +156,27 @@ class IrSourceCompilerForInline(
     override fun getContextLabels(): Set<String> {
         val name = codegen.irFunction.name.asString()
         if (name == INVOKE_SUSPEND_METHOD_NAME) {
-            codegen.context.suspendLambdaToOriginalFunctionMap[codegen.irFunction.parent]?.let {
+            codegen.context.suspendLambdaToOriginalFunctionMap[codegen.irFunction.parentAsClass.nameForIrSerialization]?.let {
                 return setOf(it.name.asString())
             }
         }
         return setOf(name)
+    }
+
+    // TODO: Find a way to awoid using PSI here
+    override fun reportSuspensionPointInsideMonitor(stackTraceElement: String) {
+        val element = callElement.descriptor.source.getPsi() as KtElement
+        org.jetbrains.kotlin.codegen.coroutines.reportSuspensionPointInsideMonitor(element, state, stackTraceElement)
+    }
+
+    override fun getSourceFile(): String {
+        val element = callElement.descriptor.source.getPsi() as KtElement
+        return element.containingKtFile.name
+    }
+
+    override fun getLineNumber(): Int {
+        val element = callElement.descriptor.source.getPsi() as KtElement
+        return CodegenUtil.getLineNumberForElement(element, false) ?: 0
     }
 
     internal val isPrimaryCopy: Boolean

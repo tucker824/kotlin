@@ -1,12 +1,11 @@
 // WITH_RUNTIME
 // WITH_COROUTINES
-// COMMON_COROUTINES_TEST
 // CHECK_BYTECODE_LISTING
 // IGNORE_BACKEND: JVM
 // TARGET_BACKEND: JVM
 
 import helpers.*
-import COROUTINES_PACKAGE.*
+import kotlin.coroutines.*
 
 fun builder(c: suspend() -> Unit) {
     c.startCoroutine(EmptyContinuation)

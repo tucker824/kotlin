@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.backend.jvm.codegen
 
+import org.jetbrains.kotlin.backend.common.CodegenUtil
 import org.jetbrains.kotlin.backend.common.descriptors.WrappedFunctionDescriptorWithContainerSource
 import org.jetbrains.kotlin.backend.common.descriptors.WrappedSimpleFunctionDescriptor
 import org.jetbrains.kotlin.backend.common.ir.copyTo
@@ -16,6 +17,8 @@ import org.jetbrains.kotlin.codegen.ClassBuilder
 import org.jetbrains.kotlin.codegen.coroutines.CoroutineTransformerMethodVisitor
 import org.jetbrains.kotlin.codegen.coroutines.INVOKE_SUSPEND_METHOD_NAME
 import org.jetbrains.kotlin.codegen.coroutines.SUSPEND_FUNCTION_COMPLETION_PARAMETER_NAME
+import org.jetbrains.kotlin.codegen.coroutines.reportSuspensionPointInsideMonitor
+import org.jetbrains.kotlin.codegen.inline.coroutines.FOR_INLINE_SUFFIX
 import org.jetbrains.kotlin.config.isReleaseCoroutines
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -60,8 +63,9 @@ internal fun generateStateMachineForNamedFunction(
     return CoroutineTransformerMethodVisitor(
         methodVisitor, access, signature.asmMethod.name, signature.asmMethod.descriptor, null, null,
         obtainClassBuilderForCoroutineState = { continuationClassBuilder!! },
-        element = element,
-        diagnostics = state.diagnostics,
+        reportSuspensionPointInsideMonitor = { reportSuspensionPointInsideMonitor(element, state, it) },
+        lineNumber = CodegenUtil.getLineNumberForElement(element, false) ?: 0,
+        sourceFile = classCodegen.irClass.file.name,
         languageVersionSettings = languageVersionSettings,
         shouldPreserveClassInitialization = state.constructorCallNormalizationMode.shouldPreserveClassInitialization,
         containingClassInternalName = classCodegen.visitor.thisName,
@@ -86,8 +90,9 @@ internal fun generateStateMachineForLambda(
     return CoroutineTransformerMethodVisitor(
         methodVisitor, access, signature.asmMethod.name, signature.asmMethod.descriptor, null, null,
         obtainClassBuilderForCoroutineState = { classCodegen.visitor },
-        element = element,
-        diagnostics = state.diagnostics,
+        reportSuspensionPointInsideMonitor = { reportSuspensionPointInsideMonitor(element, state, it) },
+        lineNumber = CodegenUtil.getLineNumberForElement(element, false) ?: 0,
+        sourceFile = classCodegen.irClass.file.name,
         languageVersionSettings = languageVersionSettings,
         shouldPreserveClassInitialization = state.constructorCallNormalizationMode.shouldPreserveClassInitialization,
         containingClassInternalName = classCodegen.visitor.thisName,
@@ -95,11 +100,21 @@ internal fun generateStateMachineForLambda(
     )
 }
 
+private fun IrDeclarationParent.isLoweredContinuationAnd(c: (IrClass) -> Boolean): Boolean = (this as? IrClass)?.let {
+    it.origin == JvmLoweredDeclarationOrigin.CONTINUATION_CLASS && c(it)
+} == true
+
 internal fun IrFunction.isInvokeSuspendOfLambda(context: JvmBackendContext): Boolean =
-    name.asString() == INVOKE_SUSPEND_METHOD_NAME && parent in context.suspendLambdaToOriginalFunctionMap
+    name.asString() == INVOKE_SUSPEND_METHOD_NAME &&
+            parent.isLoweredContinuationAnd { it.nameForIrSerialization in context.suspendLambdaToOriginalFunctionMap }
+
+internal fun IrFunction.isInvokeSuspendForInlineOfLambda(context: JvmBackendContext): Boolean =
+    name.asString() == INVOKE_SUSPEND_METHOD_NAME + FOR_INLINE_SUFFIX &&
+            parent.isLoweredContinuationAnd { it.nameForIrSerialization in context.suspendLambdaToOriginalFunctionMap }
 
 internal fun IrFunction.isInvokeOfSuspendLambda(context: JvmBackendContext): Boolean =
-    name.asString() == "invoke" && parent in context.suspendLambdaToOriginalFunctionMap
+    name.asString() == "invoke" &&
+            parent.isLoweredContinuationAnd { it.nameForIrSerialization in context.suspendLambdaToOriginalFunctionMap }
 
 internal fun IrFunction.isInvokeSuspendOfContinuation(context: JvmBackendContext): Boolean =
     name.asString() == INVOKE_SUSPEND_METHOD_NAME && parentAsClass in context.suspendFunctionContinuations.values
@@ -202,7 +217,8 @@ internal fun IrCall.createSuspendFunctionCallViewIfNeeded(
         }
         val continuationParameter =
             when {
-                caller.isInvokeSuspendOfLambda(context) || caller.isInvokeSuspendOfContinuation(context) ->
+                caller.isInvokeSuspendOfLambda(context) || caller.isInvokeSuspendOfContinuation(context) ||
+                        caller.isInvokeSuspendForInlineOfLambda(context) ->
                     IrGetValueImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, caller.dispatchReceiverParameter!!.symbol)
                 callerIsInlineLambda -> context.fakeContinuation
                 else -> IrGetValueImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, caller.valueParameters.last().symbol)

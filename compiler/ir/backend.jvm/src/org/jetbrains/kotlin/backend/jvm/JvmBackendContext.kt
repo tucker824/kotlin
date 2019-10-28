@@ -98,7 +98,7 @@ class JvmBackendContext(
     override val internalPackageFqn = FqName("kotlin.jvm")
 
     val suspendFunctionContinuations = mutableMapOf<IrFunction, IrClass>()
-    val suspendLambdaToOriginalFunctionMap = mutableMapOf<IrClass, IrFunction>()
+    val suspendLambdaToOriginalFunctionMap = mutableMapOf<Name, IrFunction>()
     val continuationClassBuilders = mutableMapOf<IrClass, ClassBuilder>()
     val suspendFunctionViews = mutableMapOf<IrFunction, IrFunction>()
     val fakeContinuation: IrExpression = createFakeContinuation(this)

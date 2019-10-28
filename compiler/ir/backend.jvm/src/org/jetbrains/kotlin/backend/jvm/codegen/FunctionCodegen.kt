@@ -74,7 +74,7 @@ open class FunctionCodegen(
             val frameMap = createFrameMapWithReceivers()
             val irClass = context.suspendFunctionContinuations[irFunction]
             val element = (irFunction.symbol.descriptor.psiElement
-                ?: context.suspendLambdaToOriginalFunctionMap[irFunction.parent]?.symbol?.descriptor?.psiElement) as? KtElement
+                ?: context.suspendLambdaToOriginalFunctionMap[irFunction.parentAsClass.nameForIrSerialization]?.symbol?.descriptor?.psiElement) as? KtElement
             val continuationClassBuilder = context.continuationClassBuilders[irClass]
             methodVisitor = when {
                 irFunction.isSuspend &&
