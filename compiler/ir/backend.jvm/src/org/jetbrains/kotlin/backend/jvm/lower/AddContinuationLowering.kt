@@ -81,8 +81,7 @@ private class AddContinuationLowering(private val context: JvmBackendContext) : 
                 if (!expression.isSuspend)
                     return expression
                 val info = suspendLambdas.singleOrNull { it.function == expression.symbol.owner } ?: return expression
-                val irBuilder = context.createIrBuilder(expression.symbol, expression.startOffset, expression.endOffset)
-                val res = irBuilder.run {
+                return context.createIrBuilder(expression.symbol, expression.startOffset, expression.endOffset).run {
                     val expressionArguments = expression.getArguments().map { it.second }
                     irBlock {
                         +generateContinuationClassForLambda(info, currentDeclarationParent)
@@ -98,9 +97,7 @@ private class AddContinuationLowering(private val context: JvmBackendContext) : 
                             putValueArgument(expressionArguments.size, irNull())
                         }
                     }
-                }
-                res.transformChildrenVoid(this)
-                return res
+                }.also { it.transformChildrenVoid(this) }
             }
 
             private val currentDeclarationParent
@@ -152,7 +149,7 @@ private class AddContinuationLowering(private val context: JvmBackendContext) : 
                 addInvoke(constructor, invokeSuspend, invokeToOverride, receiverField, parametersWithoutArguments, isConstructorCall = true)
             }
 
-            context.suspendLambdaToOriginalFunctionMap[nameForIrSerialization] = info.function
+            context.suspendLambdaToOriginalFunctionMap[attributeOwnerId as IrFunctionReference] = info.function
 
             info.constructor = constructor
         }
@@ -547,12 +544,14 @@ private class AddContinuationLowering(private val context: JvmBackendContext) : 
                 // collect lambdas, which capture crossinline
                 for (i in 0 until expression.valueArgumentsCount) {
                     val valueArgument = expression.getValueArgument(i) as? IrBlock ?: continue
-                    val reference = valueArgument.statements.filterIsInstance<IrFunctionReference>().singleOrNull() ?: continue
+                    if (valueArgument.origin != IrStatementOrigin.LAMBDA) continue
+                    val reference = valueArgument.statements.last() as? IrFunctionReference ?: continue
                     for (j in 0 until reference.valueArgumentsCount) {
                         val getValue = (reference.getValueArgument(j) as? IrGetValue) ?: continue
                         val parameter = getValue.symbol.owner as? IrValueParameter ?: continue
                         if (parameter.isCrossinline) {
                             capturesCrossinline += reference
+                            break
                         }
                     }
                 }

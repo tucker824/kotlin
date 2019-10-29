@@ -106,15 +106,15 @@ private fun IrDeclarationParent.isLoweredContinuationAnd(c: (IrClass) -> Boolean
 
 internal fun IrFunction.isInvokeSuspendOfLambda(context: JvmBackendContext): Boolean =
     name.asString() == INVOKE_SUSPEND_METHOD_NAME &&
-            parent.isLoweredContinuationAnd { it.nameForIrSerialization in context.suspendLambdaToOriginalFunctionMap }
+            parent.isLoweredContinuationAnd { it.attributeOwnerId in context.suspendLambdaToOriginalFunctionMap }
 
 internal fun IrFunction.isInvokeSuspendForInlineOfLambda(context: JvmBackendContext): Boolean =
     name.asString() == INVOKE_SUSPEND_METHOD_NAME + FOR_INLINE_SUFFIX &&
-            parent.isLoweredContinuationAnd { it.nameForIrSerialization in context.suspendLambdaToOriginalFunctionMap }
+            parent.isLoweredContinuationAnd { it.attributeOwnerId in context.suspendLambdaToOriginalFunctionMap }
 
 internal fun IrFunction.isInvokeOfSuspendLambda(context: JvmBackendContext): Boolean =
     name.asString() == "invoke" &&
-            parent.isLoweredContinuationAnd { it.nameForIrSerialization in context.suspendLambdaToOriginalFunctionMap }
+            parent.isLoweredContinuationAnd { it.attributeOwnerId in context.suspendLambdaToOriginalFunctionMap }
 
 internal fun IrFunction.isInvokeSuspendOfContinuation(context: JvmBackendContext): Boolean =
     name.asString() == INVOKE_SUSPEND_METHOD_NAME && parentAsClass in context.suspendFunctionContinuations.values
