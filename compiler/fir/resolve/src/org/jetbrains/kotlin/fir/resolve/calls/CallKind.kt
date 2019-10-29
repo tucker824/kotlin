@@ -20,6 +20,20 @@ sealed class CallKind {
         )
     }
 
+    /*
+     * Used for resolution of synthetic calls for resolving callable references
+     * beyond any calls like `val x = ::foo` (they're transformed to `val x = id(::foo)`)
+     * It's needed to avoid having different callable references resolution parts within calls and beyond them
+     */
+    object SyntheticIdForCallableReferencesResolution : CallKind() {
+        override val resolutionSequence: List<ResolutionStage> = listOf(
+            MapArguments,
+            CreateFreshTypeVariableSubstitutorStage,
+            CheckArguments,
+            EagerResolveOfCallableReferences
+        )
+    }
+
     object Function : CallKind() {
         override val resolutionSequence: List<ResolutionStage> = listOf(
             CheckVisibility,
@@ -29,7 +43,8 @@ sealed class CallKind {
             CreateFreshTypeVariableSubstitutorStage,
             CheckReceivers.Dispatch,
             CheckReceivers.Extension,
-            CheckArguments
+            CheckArguments,
+            EagerResolveOfCallableReferences
         )
     }
 
@@ -41,6 +56,15 @@ sealed class CallKind {
             CreateFreshTypeVariableSubstitutorStage,
             CheckReceivers.Dispatch,
             CheckReceivers.Extension
+        )
+    }
+
+    object CallableReference : CallKind() {
+        override val resolutionSequence: List<ResolutionStage> = listOf(
+            CheckVisibility,
+            DiscriminateSynthetics,
+            CreateFreshTypeVariableSubstitutorStage,
+            CheckCallableReferenceExpectedType
         )
     }
 }

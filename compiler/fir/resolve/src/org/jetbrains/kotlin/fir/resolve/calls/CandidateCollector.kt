@@ -99,6 +99,9 @@ class InvokeReceiverCandidateCollector(
                 session,
                 invokeCallInfo.containingFile,
                 invokeCallInfo.container,
+                invokeCallInfo.expectedType,
+                invokeCallInfo.outerCSBuilder,
+                invokeCallInfo.lhs,
                 invokeCallInfo.typeProvider
             )
 

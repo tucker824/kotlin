@@ -217,11 +217,10 @@ private val jvmFilePhases =
         returnableBlocksPhase then
         localDeclarationsPhase then
 
-        addContinuationPhase then
-
         jvmOverloadsAnnotationPhase then
         jvmDefaultConstructorPhase then
 
+        forLoopsPhase then
         flattenStringConcatenationPhase then
         foldConstantLoweringPhase then
         computeStringTrimPhase then
@@ -235,9 +234,10 @@ private val jvmFilePhases =
         interfaceSuperCallsPhase then
         interfaceDefaultCallsPhase then
 
+        addContinuationPhase then
+
         innerClassesPhase then
         innerClassConstructorCallsPhase then
-        forLoopsPhase then
 
         makePatchParentsPhase(2) then
 

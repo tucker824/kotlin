@@ -53,8 +53,8 @@ import org.jetbrains.kotlin.resolve.constraintSystem.AbstractConstraintSystemTes
 import org.jetbrains.kotlin.serialization.AbstractLocalClassProtoTest
 import org.jetbrains.kotlin.test.TargetBackend
 import org.jetbrains.kotlin.types.AbstractTypeBindingTest
-import org.jetbrains.kotlin.visualizer.psi.AbstractPsiVisualizer
 import org.jetbrains.kotlin.visualizer.fir.AbstractFirVisualizer
+import org.jetbrains.kotlin.visualizer.psi.AbstractPsiVisualizer
 
 fun main(args: Array<String>) {
     System.setProperty("java.awt.headless", "true")
@@ -152,13 +152,18 @@ fun main(args: Array<String>) {
         }
 
         GenerateRangesCodegenTestData.main(emptyArray<String>())
+        GenerateInRangeExpressionTestData.main(emptyArray<String>())
+        GenerateSteppedRangesCodegenTestData.main(emptyArray<String>())
+        GeneratePrimitiveVsObjectEqualityTestData.main(emptyArray<String>())
 
         testClass<AbstractBlackBoxCodegenTest> {
             model("codegen/box", targetBackend = TargetBackend.JVM)
         }
 
         testClass<AbstractLightAnalysisModeTest> {
-            model("codegen/box", targetBackend = TargetBackend.JVM, skipIgnored = true)
+            // "ranges/stepped" is excluded because it contains hundreds of generated tests and only have a box() method.
+            // There isn't much to be gained from running light analysis tests on them.
+            model("codegen/box", targetBackend = TargetBackend.JVM, skipIgnored = true, excludeDirs = listOf("ranges/stepped"))
         }
 
         testClass<AbstractKapt3BuilderModeBytecodeShapeTest> {
@@ -238,7 +243,12 @@ fun main(args: Array<String>) {
             model("loadJava/compiledKotlin", testMethod = "doTestCompiledKotlin")
             model("loadJava/compiledKotlinWithStdlib", testMethod = "doTestCompiledKotlinWithStdlib")
             model("loadJava/javaAgainstKotlin", extension = "txt", testMethod = "doTestJavaAgainstKotlin")
-            model("loadJava/kotlinAgainstCompiledJavaWithKotlin", extension = "kt", testMethod = "doTestKotlinAgainstCompiledJavaWithKotlin", recursive = false)
+            model(
+                "loadJava/kotlinAgainstCompiledJavaWithKotlin",
+                extension = "kt",
+                testMethod = "doTestKotlinAgainstCompiledJavaWithKotlin",
+                recursive = false
+            )
             model("loadJava/sourceJava", extension = "java", testMethod = "doTestSourceJava")
         }
 
@@ -249,7 +259,12 @@ fun main(args: Array<String>) {
             model("loadJava/compiledKotlin", testMethod = "doTestCompiledKotlin")
             model("loadJava/compiledKotlinWithStdlib", testMethod = "doTestCompiledKotlinWithStdlib")
             model("loadJava/javaAgainstKotlin", extension = "txt", testMethod = "doTestJavaAgainstKotlin")
-            model("loadJava/kotlinAgainstCompiledJavaWithKotlin", extension = "kt", testMethod = "doTestKotlinAgainstCompiledJavaWithKotlin", recursive = false)
+            model(
+                "loadJava/kotlinAgainstCompiledJavaWithKotlin",
+                extension = "kt",
+                testMethod = "doTestKotlinAgainstCompiledJavaWithKotlin",
+                recursive = false
+            )
             model("loadJava/sourceJava", extension = "java", testMethod = "doTestSourceJava")
         }
 
@@ -262,8 +277,18 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractCompileJavaAgainstKotlinTest> {
-            model("compileJavaAgainstKotlin", testClassName = "WithoutJavac", testMethod = "doTestWithoutJavac", targetBackend = TargetBackend.JVM)
-            model("compileJavaAgainstKotlin", testClassName = "WithJavac", testMethod = "doTestWithJavac", targetBackend = TargetBackend.JVM)
+            model(
+                "compileJavaAgainstKotlin",
+                testClassName = "WithoutJavac",
+                testMethod = "doTestWithoutJavac",
+                targetBackend = TargetBackend.JVM
+            )
+            model(
+                "compileJavaAgainstKotlin",
+                testClassName = "WithJavac",
+                testMethod = "doTestWithJavac",
+                targetBackend = TargetBackend.JVM
+            )
         }
 
         testClass<AbstractCompileKotlinAgainstJavaTest> {
@@ -361,7 +386,14 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractIrBlackBoxCodegenTest> {
-            model("codegen/box", targetBackend = TargetBackend.JVM_IR)
+            model(
+                "codegen/box",
+                targetBackend = TargetBackend.JVM_IR,
+                excludeDirs = listOf(
+                    "ieee754/oldLanguageVersions",
+                    "operatorConventions/oldLanguageVersions"
+                )
+            )
         }
 
         testClass<AbstractIrBlackBoxAgainstJavaCodegenTest> {
@@ -369,7 +401,12 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractIrCompileJavaAgainstKotlinTest> {
-            model("compileJavaAgainstKotlin", testClassName = "WithoutJavac", testMethod = "doTestWithoutJavac", targetBackend = TargetBackend.JVM_IR)
+            model(
+                "compileJavaAgainstKotlin",
+                testClassName = "WithoutJavac",
+                testMethod = "doTestWithoutJavac",
+                targetBackend = TargetBackend.JVM_IR
+            )
             //model("compileJavaAgainstKotlin", testClassName = "WithJavac", testMethod = "doTestWithJavac", targetBackend = TargetBackend.JVM_IR)
         }
 
@@ -434,7 +471,13 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractIrBytecodeTextTest> {
-            model("codegen/bytecodeText", targetBackend = TargetBackend.JVM_IR)
+            model(
+                "codegen/bytecodeText",
+                targetBackend = TargetBackend.JVM_IR,
+                excludeDirs = listOf(
+                    "ieee754/oldLanguageVersions"
+                )
+            )
         }
     }
 
@@ -463,13 +506,17 @@ fun main(args: Array<String>) {
             model("resolve", pattern = KT_WITHOUT_DOTS_IN_NAME, excludeDirs = listOf("stdlib", "cfg", "smartcasts"))
         }
 
-        testClass<AbstractFirResolveTestCaseWithStdlib> {
-            model("resolve/stdlib", pattern = KT_WITHOUT_DOTS_IN_NAME)
-        }
-
         testClass<AbstractFirCfgBuildingTest> {
             model("resolve/cfg", pattern = KT_WITHOUT_DOTS_IN_NAME)
             model("resolve/smartcasts", pattern = KT_WITHOUT_DOTS_IN_NAME)
+        }
+
+        testClass<AbstractFirResolveTestCaseWithStdlib> {
+            model("resolve/stdlib", pattern = KT_WITHOUT_DOTS_IN_NAME, excludeDirs = listOf("contracts"))
+        }
+
+        testClass<AbstractFirCfgBuildingWithStdlibTest> {
+            model("resolve/stdlib/contracts", pattern = KT_WITHOUT_DOTS_IN_NAME)
         }
     }
 

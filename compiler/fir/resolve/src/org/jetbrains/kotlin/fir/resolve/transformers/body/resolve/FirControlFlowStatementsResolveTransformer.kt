@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.fir.FirTargetElement
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.expressions.impl.FirElseIfTrueCondition
 import org.jetbrains.kotlin.fir.expressions.impl.FirEmptyExpressionBlock
-import org.jetbrains.kotlin.fir.references.FirResolvedCallableReference
+import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.transformers.FirSyntheticCallGenerator
 import org.jetbrains.kotlin.fir.resolve.transformers.FirWhenExhaustivenessTransformer
 import org.jetbrains.kotlin.fir.resolvedTypeFromPrototype
@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.fir.visitors.transformSingle
 class FirControlFlowStatementsResolveTransformer(transformer: FirBodyResolveTransformer) :
     FirPartialBodyResolveTransformer(transformer) {
 
-    private val syntheticCallGenerator: FirSyntheticCallGenerator = FirSyntheticCallGenerator(components)
+    private val syntheticCallGenerator: FirSyntheticCallGenerator get() = components.syntheticCallGenerator
     private val whenExhaustivenessTransformer = FirWhenExhaustivenessTransformer(components)
 
 
@@ -47,7 +47,7 @@ class FirControlFlowStatementsResolveTransformer(transformer: FirBodyResolveTran
     // ------------------------------- When expressions -------------------------------
 
     override fun transformWhenExpression(whenExpression: FirWhenExpression, data: Any?): CompositeTransformResult<FirStatement> {
-        if (whenExpression.calleeReference is FirResolvedCallableReference && whenExpression.resultType !is FirImplicitTypeRef) {
+        if (whenExpression.calleeReference is FirResolvedNamedReference && whenExpression.resultType !is FirImplicitTypeRef) {
             return whenExpression.compose()
         }
         dataFlowAnalyzer.enterWhenExpression(whenExpression)
@@ -69,6 +69,7 @@ class FirControlFlowStatementsResolveTransformer(transformer: FirBodyResolveTran
                     whenExpression = whenExpression.transformBranches(transformer, null)
 
                     whenExpression = syntheticCallGenerator.generateCalleeForWhenExpression(whenExpression) ?: run {
+                        whenExpression = whenExpression.transformSingle(whenExhaustivenessTransformer, null)
                         dataFlowAnalyzer.exitWhenExpression(whenExpression)
                         whenExpression.resultType = FirErrorTypeRefImpl(null, "")
                         return@with whenExpression.compose()
@@ -121,7 +122,7 @@ class FirControlFlowStatementsResolveTransformer(transformer: FirBodyResolveTran
     // ------------------------------- Try/catch expressions -------------------------------
 
     override fun transformTryExpression(tryExpression: FirTryExpression, data: Any?): CompositeTransformResult<FirStatement> {
-        if (tryExpression.calleeReference is FirResolvedCallableReference && tryExpression.resultType !is FirImplicitTypeRef) {
+        if (tryExpression.calleeReference is FirResolvedNamedReference && tryExpression.resultType !is FirImplicitTypeRef) {
             return tryExpression.compose()
         }
 

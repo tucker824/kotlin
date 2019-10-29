@@ -21,13 +21,15 @@ import com.intellij.psi.util.CachedValueProvider
 import com.intellij.util.ArrayUtil
 import com.intellij.util.containers.ContainerUtil
 import gnu.trove.THashMap
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 
 class KotlinClassInnerStuffCache(val myClass: PsiExtensibleClass, externalDependencies: List<Any>) {
     private val myTracker = SimpleModificationTracker()
     private val dependencies: List<Any> = externalDependencies + myTracker
 
     fun <T : Any> get(initializer: () -> T) = object : Lazy<T> {
-        // Note: holder is used as initialization monitor as well
+        private val lock = ReentrantLock()
         private val holder = lazyPub {
             PsiCachedValueImpl(PsiManager.getInstance(myClass.project),
                                CachedValueProvider<T> {
@@ -49,18 +51,23 @@ class KotlinClassInnerStuffCache(val myClass: PsiExtensibleClass, externalDepend
                     // Assumption 1: Lets say A calculation requires another value e.g. B to be calculated
                     // Assumption 2: Thread T2 wants to calculate value for B
 
-                    // to avoid dead-lock case we mark thread as doing calculation and acquire lock only once per thread
+                    // to avoid dead-lock
+                    // - we mark thread as doing calculation and acquire lock only once per thread
                     // as a trade-off to prevent dependent value could be calculated several time
                     // due to CAS (within putUserDataIfAbsent etc) the same instance of calculated value will be used
 
-                    if (!initIsRunning.get()) {
-                        synchronized(holder) {
+                    // TODO: NOTE: acquire lock for a several seconds to avoid dead-lock via resolve is a WORKAROUND
+
+                    if (!initIsRunning.get() && lock.tryLock(5, TimeUnit.SECONDS)) {
+                        try {
                             initIsRunning.set(true)
                             try {
                                 computeValue()
                             } finally {
                                 initIsRunning.set(false)
                             }
+                        } finally {
+                            lock.unlock()
                         }
                     } else {
                         computeValue()

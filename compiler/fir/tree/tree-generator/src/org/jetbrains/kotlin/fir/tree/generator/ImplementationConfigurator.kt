@@ -7,7 +7,8 @@ package org.jetbrains.kotlin.fir.tree.generator
 
 import org.jetbrains.kotlin.fir.tree.generator.context.AbstractFirTreeImplementationConfigurator
 import org.jetbrains.kotlin.fir.tree.generator.model.Implementation
-import org.jetbrains.kotlin.fir.tree.generator.model.Implementation.Kind.*
+import org.jetbrains.kotlin.fir.tree.generator.model.Implementation.Kind.Object
+import org.jetbrains.kotlin.fir.tree.generator.model.Implementation.Kind.OpenClass
 
 object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() {
     private lateinit var abstractAnnotatedElement: Implementation
@@ -101,7 +102,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         impl(resolvedImport) {
             delegateFields(listOf("aliasName", "importedFqName", "isAllUnder"), "delegate")
 
-            default("psi") {
+            default("source") {
                 delegate = "delegate"
             }
 
@@ -181,7 +182,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
                     withGetter = true
                 }
             }
-            default("calleeReference", "FirSimpleNamedReference(psi, Name.identifier(\"component\$componentIndex\"), null)")
+            default("calleeReference", "FirSimpleNamedReference(source, Name.identifier(\"component\$componentIndex\"), null)")
             useTypes(simpleNamedReferenceType, nameType, noReceiverExpressionType)
         }
 
@@ -203,7 +204,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
             parents += callWithArgumentList
             default(
                 "calleeReference",
-                "if (isThis) FirExplicitThisReference(psi, null) else FirExplicitSuperReference(psi, constructedTypeRef)"
+                "if (isThis) FirExplicitThisReference(source, null) else FirExplicitSuperReference(source, constructedTypeRef)"
             )
             default("isSuper") {
                 value = "!isThis"
@@ -213,22 +214,21 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         }
 
         impl(expression, "FirElseIfTrueCondition") {
-            default("typeRef", "FirImplicitBooleanTypeRef(psi)")
+            default("typeRef", "FirImplicitBooleanTypeRef(source)")
             useTypes(implicitBooleanTypeRefType)
         }
 
         impl(block)
 
         val emptyExpressionBlock = impl(block, "FirEmptyExpressionBlock") {
-            // TODO: make statements immutable
-            defaultNull("psi")
+            noSource()
         }
 
         impl(errorExpression)
 
         impl(loop, "FirErrorLoop") {
             default("block", "FirEmptyExpressionBlock()")
-            default("condition", "FirErrorExpressionImpl(psi, \"error loop\")")
+            default("condition", "FirErrorExpressionImpl(source, \"error loop\")")
             defaultNull("label")
             useTypes(emptyExpressionBlock)
         }
@@ -336,18 +336,18 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
 
         impl(returnExpression) {
             lateinit("target")
-            default("typeRef", "FirImplicitNothingTypeRef(psi)")
+            default("typeRef", "FirImplicitNothingTypeRef(source)")
             useTypes(implicitNothingTypeRefType)
         }
 
         impl(stringConcatenationCall) {
             parents += callWithArgumentList
-            default("typeRef", "FirImplicitStringTypeRef(psi)")
+            default("typeRef", "FirImplicitStringTypeRef(source)")
             useTypes(implicitStringTypeRefType)
         }
 
         impl(throwExpression) {
-            default("typeRef", "FirImplicitNothingTypeRef(psi)")
+            default("typeRef", "FirImplicitNothingTypeRef(source)")
             useTypes(implicitNothingTypeRefType)
         }
 
@@ -366,7 +366,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         }
 
         impl(expression, "FirUnitExpression") {
-            default("typeRef", "FirImplicitUnitTypeRef(psi)")
+            default("typeRef", "FirImplicitUnitTypeRef(source)")
             useTypes(implicitUnitTypeRefType)
         }
 
@@ -401,7 +401,8 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
                 withGetter = true
             }
             defaultNull("body")
-            useTypes(modalityType)
+            default("contractDescription", "FirEmptyContractDescription")
+            useTypes(modalityType, emptyContractDescriptionType)
             kind = OpenClass
         }
 
@@ -425,11 +426,15 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
             }
         }
 
-        impl(resolvedCallableReference) {
+        impl(resolvedNamedReference) {
             defaultNull("candidateSymbol", withGetter = true)
         }
 
-        impl(resolvedCallableReference, "FirPropertyFromParameterCallableReference") {
+        impl(resolvedNamedReference, "FirPropertyFromParameterResolvedNamedReference") {
+            defaultNull("candidateSymbol", withGetter = true)
+        }
+
+        impl(resolvedCallableReference) {
             defaultNull("candidateSymbol", withGetter = true)
         }
 
@@ -459,7 +464,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         }
 
         impl(thisReference, "FirImplicitThisReference") {
-            defaultNull("psi")
+            noSource()
             default("labelName") {
                 value = "null"
                 withGetter = true
@@ -472,7 +477,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
         impl(superReference, "FirExplicitSuperReference")
 
         impl(controlFlowGraphReference, "FirEmptyControlFlowGraphReference") {
-            noPsi()
+            noSource()
         }
 
         impl(resolvedTypeRef)
@@ -495,11 +500,11 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
 
         impl(implicitTypeRef, "FirComputingImplicitTypeRef") {
             kind = Object
-            defaultNull("psi", withGetter = true)
+            defaultNull("source", withGetter = true)
         }
 
         impl(reference, "FirStubReference") {
-            default("psi") {
+            default("source") {
                 value = "null"
                 withGetter = true
             }
@@ -512,7 +517,7 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
 
         impl(typeProjection, "FirTypePlaceholderProjection") {
             kind = Object
-            defaultNull("psi")
+            noSource()
         }
 
         val abstractLoopJump = impl(loopJump, "FirAbstractLoopJump") {
@@ -521,13 +526,13 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
 
         impl(breakExpression) {
             parents += abstractLoopJump
-            default("typeRef", "FirImplicitNothingTypeRef(psi)")
+            default("typeRef", "FirImplicitNothingTypeRef(source)")
             useTypes(implicitNothingTypeRefType)
         }
 
         impl(continueExpression) {
             parents += abstractLoopJump
-            default("typeRef", "FirImplicitNothingTypeRef(psi)")
+            default("typeRef", "FirImplicitNothingTypeRef(source)")
             useTypes(implicitNothingTypeRefType)
         }
 
@@ -551,10 +556,12 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
             parents += modifiableFunction.withArg(simpleFunction)
             parents += modifiableTypeParametersOwner
             defaultNull("body")
+            default("contractDescription", "FirEmptyContractDescription")
+            useTypes(emptyContractDescriptionType)
         }
 
         impl(delegatedTypeRef) {
-            listOf("psi", "annotations").forEach {
+            listOf("source", "annotations").forEach {
                 default(it) {
                     delegate = "typeRef"
                 }

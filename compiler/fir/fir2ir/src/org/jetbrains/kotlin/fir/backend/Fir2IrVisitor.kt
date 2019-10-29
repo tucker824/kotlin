@@ -17,10 +17,13 @@ import org.jetbrains.kotlin.fir.expressions.impl.FirElseIfTrueCondition
 import org.jetbrains.kotlin.fir.expressions.impl.FirNoReceiverExpression
 import org.jetbrains.kotlin.fir.expressions.impl.FirUnitExpression
 import org.jetbrains.kotlin.fir.references.FirReference
-import org.jetbrains.kotlin.fir.references.FirResolvedCallableReference
-import org.jetbrains.kotlin.fir.references.impl.FirPropertyFromParameterCallableReference
-import org.jetbrains.kotlin.fir.resolve.*
+import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
+import org.jetbrains.kotlin.fir.references.impl.FirPropertyFromParameterResolvedNamedReference
+import org.jetbrains.kotlin.fir.resolve.ScopeSession
+import org.jetbrains.kotlin.fir.resolve.buildUseSiteMemberScope
 import org.jetbrains.kotlin.fir.resolve.calls.SyntheticPropertySymbol
+import org.jetbrains.kotlin.fir.resolve.firSymbolProvider
+import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.scopes.ProcessorAction
 import org.jetbrains.kotlin.fir.scopes.impl.FirClassSubstitutionScope
 import org.jetbrains.kotlin.fir.symbols.impl.*
@@ -195,11 +198,11 @@ class Fir2IrVisitor(
     private fun IrClass.addFakeOverrides(klass: FirClass, processedCallableNames: MutableList<Name>) {
         if (fakeOverrideMode == FakeOverrideMode.NONE) return
         val superTypesCallableNames = klass.collectCallableNamesFromSupertypes()
-        val useSiteScope = (klass as? FirRegularClass)?.buildUseSiteScope(session, ScopeSession()) ?: return
+        val useSiteMemberScope = (klass as? FirRegularClass)?.buildUseSiteMemberScope(session, ScopeSession()) ?: return
         for (name in superTypesCallableNames) {
             if (name in processedCallableNames) continue
             processedCallableNames += name
-            useSiteScope.processFunctionsByName(name) { functionSymbol ->
+            useSiteMemberScope.processFunctionsByName(name) { functionSymbol ->
                 // TODO: think about overloaded functions. May be we should process all names.
                 if (functionSymbol is FirNamedFunctionSymbol) {
                     val originalFunction = functionSymbol.fir
@@ -228,7 +231,7 @@ class Fir2IrVisitor(
                 }
                 ProcessorAction.STOP
             }
-            useSiteScope.processPropertiesByName(name) { propertySymbol ->
+            useSiteMemberScope.processPropertiesByName(name) { propertySymbol ->
                 if (propertySymbol is FirPropertySymbol) {
                     val originalProperty = propertySymbol.fir
                     val origin = IrDeclarationOrigin.FAKE_OVERRIDE
@@ -660,8 +663,8 @@ class Fir2IrVisitor(
 
     private fun FirReference.statementOrigin(): IrStatementOrigin? {
         return when (this) {
-            is FirPropertyFromParameterCallableReference -> IrStatementOrigin.INITIALIZE_PROPERTY_FROM_PARAMETER
-            is FirResolvedCallableReference -> when (resolvedSymbol) {
+            is FirPropertyFromParameterResolvedNamedReference -> IrStatementOrigin.INITIALIZE_PROPERTY_FROM_PARAMETER
+            is FirResolvedNamedReference -> when (resolvedSymbol) {
                 is FirAccessorSymbol, is SyntheticPropertySymbol -> IrStatementOrigin.GET_PROPERTY
                 else -> null
             }

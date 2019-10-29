@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirTypeParameter
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
@@ -16,18 +17,19 @@ import org.jetbrains.kotlin.fir.expressions.FirArrayOfCall
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.impl.*
 import org.jetbrains.kotlin.fir.impl.FirAbstractAnnotatedElement
+import org.jetbrains.kotlin.fir.java.declarations.FirJavaMethod
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaValueParameter
 import org.jetbrains.kotlin.fir.java.enhancement.readOnlyToMutable
 import org.jetbrains.kotlin.fir.java.types.FirJavaTypeRef
-import org.jetbrains.kotlin.fir.references.FirErrorNamedReference
 import org.jetbrains.kotlin.fir.references.impl.FirErrorNamedReferenceImpl
-import org.jetbrains.kotlin.fir.references.impl.FirResolvedCallableReferenceImpl
+import org.jetbrains.kotlin.fir.references.impl.FirResolvedNamedReferenceImpl
 import org.jetbrains.kotlin.fir.resolve.constructClassType
 import org.jetbrains.kotlin.fir.resolve.firSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.getClassDeclaredCallableSymbols
 import org.jetbrains.kotlin.fir.symbols.StandardClassIds
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
+import org.jetbrains.kotlin.fir.toFirSourceElement
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.ConeClassTypeImpl
 import org.jetbrains.kotlin.fir.types.impl.ConeTypeParameterTypeImpl
@@ -71,7 +73,7 @@ internal fun FirTypeRef.toNotNullConeKotlinType(
             val javaType = type
             javaType.toNotNullConeKotlinType(session, javaTypeParameterStack)
         }
-        else -> ConeKotlinErrorType("Unexpected type reference in JavaClassUseSiteScope: ${this::class.java}")
+        else -> ConeKotlinErrorType("Unexpected type reference in JavaClassUseSiteMemberScope: ${this::class.java}")
     }
 
 internal fun JavaType?.toNotNullConeKotlinType(
@@ -93,7 +95,7 @@ internal fun JavaClassifierType.toFirResolvedTypeRef(
 ): FirResolvedTypeRef {
     val coneType = this.toConeKotlinTypeWithNullability(session, javaTypeParameterStack, isNullable = false)
     return FirResolvedTypeRefImpl(
-        psi = null, type = coneType
+        source = null, type = coneType
     ).apply {
         annotations += this@toFirResolvedTypeRef.annotations.map { it.toFirAnnotationCall(session, javaTypeParameterStack) }
     }
@@ -173,9 +175,9 @@ internal fun JavaAnnotation.toFirAnnotationCall(
     session: FirSession, javaTypeParameterStack: JavaTypeParameterStack
 ): FirAnnotationCall {
     return FirAnnotationCallImpl(
-        psi = null, useSiteTarget = null,
+        source = null, useSiteTarget = null,
         annotationTypeRef = FirResolvedTypeRefImpl(
-            psi = null,
+            source = null,
             type = ConeClassTypeImpl(FirClassSymbol(classId!!).toLookupTag(), emptyArray(), isNullable = false)
         )
     ).apply {
@@ -197,7 +199,7 @@ internal fun JavaValueParameter.toFirValueParameters(
     session: FirSession, javaTypeParameterStack: JavaTypeParameterStack
 ): FirValueParameter {
     return FirJavaValueParameter(
-        session, (this as? JavaElementImpl<*>)?.psi, name ?: Name.special("<anonymous Java parameter>"),
+        session, (this as? JavaElementImpl<*>)?.psi?.toFirSourceElement(), name ?: Name.special("<anonymous Java parameter>"),
         returnTypeRef = type.toFirJavaTypeRef(session, javaTypeParameterStack),
         isVararg = isVararg
     ).apply {
@@ -252,7 +254,7 @@ private fun JavaAnnotationArgument.toFirExpression(
                         classId, entryName
                     ).firstOrNull()
                     callableSymbol?.let {
-                        FirResolvedCallableReferenceImpl(null, entryName, it)
+                        FirResolvedNamedReferenceImpl(null, entryName, it)
                     }
                 } else {
                     null
@@ -311,8 +313,95 @@ private fun JavaType.toFirResolvedTypeRef(
 ): FirResolvedTypeRef {
     if (this is JavaClassifierType) return toFirResolvedTypeRef(session, javaTypeParameterStack)
     return FirResolvedTypeRefImpl(
-        psi = null, type = ConeClassErrorType("Unexpected JavaType: $this")
+        source = null, type = ConeClassErrorType("Unexpected JavaType: $this")
     )
 }
+
+internal fun FirFunction<*>.computeJvmDescriptor(): String = buildString {
+    if (this@computeJvmDescriptor is FirJavaMethod) {
+        append(name.asString())
+    } else {
+        append("<init>")
+    }
+
+    append("(")
+    for (parameter in valueParameters) {
+        appendErasedType(parameter.returnTypeRef)
+    }
+    append(")")
+
+    if (this@computeJvmDescriptor !is FirJavaMethod || (returnTypeRef as FirJavaTypeRef).isVoid()) {
+        append("V")
+    } else {
+        appendErasedType(returnTypeRef)
+    }
+}
+
+// TODO: primitive types, arrays, etc.
+private fun StringBuilder.appendErasedType(typeRef: FirTypeRef) {
+    fun appendClass(klass: JavaClass) {
+        klass.fqName?.let {
+            append("L")
+            append(it.asString().replace(".", "/"))
+        }
+    }
+
+    when (typeRef) {
+        is FirResolvedTypeRef -> appendConeType(typeRef.type)
+        is FirJavaTypeRef -> {
+            when (val javaType = typeRef.type) {
+                is JavaClassifierType -> {
+                    when (val classifier = javaType.classifier) {
+                        is JavaClass -> appendClass(classifier)
+                        is JavaTypeParameter -> {
+                            val representative = classifier.upperBounds.firstOrNull { it.classifier is JavaClass }
+                            if (representative == null) {
+                                append("Ljava/lang/Object")
+                            } else {
+                                appendClass(representative.classifier as JavaClass)
+                            }
+                        }
+                        else -> return
+                    }
+                    append(";")
+                }
+            }
+        }
+    }
+}
+
+private fun StringBuilder.appendConeType(coneType: ConeKotlinType) {
+    fun appendClassLikeType(type: ConeClassLikeType) {
+        append("L")
+        val classId = type.lookupTag.classId
+        append(classId.packageFqName.asString().replace(".", "/"))
+        append("/")
+        append(classId.relativeClassName)
+    }
+
+    if (coneType is ConeClassErrorType) return
+    when (coneType) {
+        is ConeClassLikeType -> {
+            appendClassLikeType(coneType)
+        }
+        is ConeTypeParameterType -> {
+            val representative = coneType.lookupTag.typeParameterSymbol.fir.bounds.firstOrNull {
+                (it as? FirResolvedTypeRef)?.type is ConeClassLikeType
+            }
+            if (representative == null) {
+                append("Ljava/lang/Object")
+            } else {
+                appendClassLikeType(representative.coneTypeUnsafe())
+            }
+            append(coneType.lookupTag.name)
+        }
+    }
+    append(";")
+}
+
+private fun FirJavaTypeRef.isVoid(): Boolean {
+    return type is JavaPrimitiveType && type.type == null
+}
+
 
 

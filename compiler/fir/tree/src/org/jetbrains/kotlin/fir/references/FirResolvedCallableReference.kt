@@ -5,8 +5,9 @@
 
 package org.jetbrains.kotlin.fir.references
 
-import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
+import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.fir.visitors.*
 
@@ -15,11 +16,12 @@ import org.jetbrains.kotlin.fir.visitors.*
  * DO NOT MODIFY IT MANUALLY
  */
 
-abstract class FirResolvedCallableReference : FirNamedReference() {
-    abstract override val psi: PsiElement?
+abstract class FirResolvedCallableReference : FirResolvedNamedReference() {
+    abstract override val source: FirSourceElement?
     abstract override val name: Name
     abstract override val candidateSymbol: AbstractFirBasedSymbol<*>?
-    abstract val resolvedSymbol: AbstractFirBasedSymbol<*>
+    abstract override val resolvedSymbol: AbstractFirBasedSymbol<*>
+    abstract val inferredTypeArguments: List<ConeKotlinType>
 
     override fun <R, D> accept(visitor: FirVisitor<R, D>, data: D): R = visitor.visitResolvedCallableReference(this, data)
 }

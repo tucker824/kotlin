@@ -10,7 +10,10 @@ import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
-import org.jetbrains.kotlin.fir.expressions.*
+import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
+import org.jetbrains.kotlin.fir.expressions.FirConstExpression
+import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.expressions.classId
 import org.jetbrains.kotlin.fir.expressions.impl.FirConstExpressionImpl
 import org.jetbrains.kotlin.fir.expressions.impl.FirQualifiedAccessExpressionImpl
 import org.jetbrains.kotlin.fir.java.JavaTypeParameterStack
@@ -19,19 +22,22 @@ import org.jetbrains.kotlin.fir.java.declarations.FirJavaField
 import org.jetbrains.kotlin.fir.java.toConeProjection
 import org.jetbrains.kotlin.fir.java.toNotNullConeKotlinType
 import org.jetbrains.kotlin.fir.java.types.FirJavaTypeRef
-import org.jetbrains.kotlin.fir.references.impl.FirResolvedCallableReferenceImpl
+import org.jetbrains.kotlin.fir.references.impl.FirResolvedNamedReferenceImpl
 import org.jetbrains.kotlin.fir.references.impl.FirSimpleNamedReference
 import org.jetbrains.kotlin.fir.resolve.constructType
 import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.resolve.toTypeProjection
-import org.jetbrains.kotlin.fir.symbols.*
+import org.jetbrains.kotlin.fir.symbols.ConeClassLikeLookupTag
+import org.jetbrains.kotlin.fir.symbols.ConeClassifierLookupTag
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.ConeClassLikeLookupTagImpl
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.typeContext
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.FirResolvedTypeRefImpl
 import org.jetbrains.kotlin.ir.expressions.IrConstKind
-import org.jetbrains.kotlin.load.java.JvmAnnotationNames
+import org.jetbrains.kotlin.load.java.JvmAnnotationNames.DEFAULT_NULL_FQ_NAME
+import org.jetbrains.kotlin.load.java.JvmAnnotationNames.DEFAULT_VALUE_FQ_NAME
 import org.jetbrains.kotlin.load.java.descriptors.AnnotationDefaultValue
 import org.jetbrains.kotlin.load.java.descriptors.NullDefaultValue
 import org.jetbrains.kotlin.load.java.descriptors.StringDefaultValue
@@ -84,7 +90,7 @@ private fun JavaType?.enhancePossiblyFlexible(
             )
 
             FirResolvedTypeRefImpl(
-                psi = null,
+                source = null,
                 type = coneFlexibleOrSimpleType(session, lowerResult, upperResult)
             ).apply {
                 this.annotations += annotations
@@ -92,7 +98,7 @@ private fun JavaType?.enhancePossiblyFlexible(
         }
         else -> {
             val enhanced = type.toNotNullConeKotlinType(session, javaTypeParameterStack)
-            FirResolvedTypeRefImpl(psi = null, type = enhanced).apply {
+            FirResolvedTypeRefImpl(source = null, type = enhanced).apply {
                 this.annotations += annotations
             }
         }
@@ -260,7 +266,7 @@ internal fun ConeKotlinType.lexicalCastFrom(session: FirSession, value: String):
             }
             if (firStaticProperty != null) {
                 FirQualifiedAccessExpressionImpl(null).apply {
-                    calleeReference = FirResolvedCallableReferenceImpl(
+                    calleeReference = FirResolvedNamedReferenceImpl(
                         null, name, firStaticProperty.symbol as FirCallableSymbol<*>
                     )
                 }
@@ -288,15 +294,18 @@ internal fun ConeKotlinType.lexicalCastFrom(session: FirSession, value: String):
 }
 
 internal fun FirValueParameter.getDefaultValueFromAnnotation(): AnnotationDefaultValue? {
-    annotations.find { it.resolvedFqName == JvmAnnotationNames.DEFAULT_VALUE_FQ_NAME }
+    annotations.find { it.classId == DEFAULT_VALUE_ID }
         ?.arguments?.firstOrNull()
         ?.safeAs<FirConstExpression<*>>()?.value?.safeAs<String>()
         ?.let { return StringDefaultValue(it) }
 
-    if (annotations.any { it.resolvedFqName == JvmAnnotationNames.DEFAULT_NULL_FQ_NAME }) {
+    if (annotations.any { it.classId == DEFAULT_NULL_ID }) {
         return NullDefaultValue
     }
 
     return null
 }
+
+private val DEFAULT_VALUE_ID = ClassId.topLevel(DEFAULT_VALUE_FQ_NAME)
+private val DEFAULT_NULL_ID = ClassId.topLevel(DEFAULT_NULL_FQ_NAME)
 

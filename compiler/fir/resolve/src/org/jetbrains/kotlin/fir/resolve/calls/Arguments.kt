@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.fir.declarations.FirAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.FirSimpleFunction
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.*
+import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.firUnsafe
 import org.jetbrains.kotlin.fir.resolve.withNullability
 import org.jetbrains.kotlin.fir.returnExpressions
@@ -17,10 +18,9 @@ import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.resolve.calls.inference.ConstraintSystemBuilder
 import org.jetbrains.kotlin.resolve.calls.inference.addSubtypeConstraintIfCompatible
 import org.jetbrains.kotlin.resolve.calls.inference.model.SimpleConstraintSystemConstraintPosition
-import org.jetbrains.kotlin.resolve.calls.model.PostponedResolvedAtomMarker
 
 
-fun resolveArgumentExpression(
+fun Candidate.resolveArgumentExpression(
     /*
     csBuilder: ConstraintSystemBuilder,
     argument: KotlinCallArgument,
@@ -35,7 +35,6 @@ fun resolveArgumentExpression(
     sink: CheckerSink,
     isReceiver: Boolean,
     isSafeCall: Boolean,
-    acceptLambdaAtoms: (PostponedResolvedAtomMarker) -> Unit,
     typeProvider: (FirExpression) -> FirTypeRef?
 ) {
     return when (argument) {
@@ -48,8 +47,19 @@ fun resolveArgumentExpression(
             isSafeCall,
             typeProvider
         )
-        // TODO:!
-        is FirCallableReferenceAccess -> Unit
+        is FirCallableReferenceAccess ->
+            if (argument.calleeReference is FirResolvedNamedReference)
+                resolvePlainExpressionArgument(
+                    csBuilder,
+                    argument,
+                    expectedType,
+                    sink,
+                    isReceiver,
+                    isSafeCall,
+                    typeProvider
+                )
+            else
+                preprocessCallableReference(argument, expectedType)
         // NB: FirCallableReferenceAccess should be checked earlier
         is FirQualifiedAccessExpression -> resolvePlainExpressionArgument(
             csBuilder,
@@ -61,7 +71,7 @@ fun resolveArgumentExpression(
             typeProvider
         )
         // TODO:!
-        is FirAnonymousFunction -> preprocessLambdaArgument(csBuilder, argument, expectedType, expectedTypeRef, acceptLambdaAtoms)
+        is FirAnonymousFunction -> preprocessLambdaArgument(csBuilder, argument, expectedType, expectedTypeRef)
         // TODO:!
         //TODO: Collection literal
         is FirWrappedArgumentExpression -> resolveArgumentExpression(
@@ -72,7 +82,6 @@ fun resolveArgumentExpression(
             sink,
             isReceiver,
             isSafeCall,
-            acceptLambdaAtoms,
             typeProvider
         )
         is FirBlock -> resolveBlockArgument(
@@ -83,14 +92,13 @@ fun resolveArgumentExpression(
             sink,
             isReceiver,
             isSafeCall,
-            acceptLambdaAtoms,
             typeProvider
         )
         else -> resolvePlainExpressionArgument(csBuilder, argument, expectedType, sink, isReceiver, isSafeCall, typeProvider)
     }
 }
 
-private fun resolveBlockArgument(
+private fun Candidate.resolveBlockArgument(
     csBuilder: ConstraintSystemBuilder,
     block: FirBlock,
     expectedType: ConeKotlinType,
@@ -98,7 +106,6 @@ private fun resolveBlockArgument(
     sink: CheckerSink,
     isReceiver: Boolean,
     isSafeCall: Boolean,
-    acceptLambdaAtoms: (PostponedResolvedAtomMarker) -> Unit,
     typeProvider: (FirExpression) -> FirTypeRef?
 ) {
     val returnArguments = block.returnExpressions()
@@ -123,7 +130,6 @@ private fun resolveBlockArgument(
             sink,
             isReceiver,
             isSafeCall,
-            acceptLambdaAtoms,
             typeProvider
         )
     }
@@ -230,7 +236,6 @@ internal fun Candidate.resolveArgument(
         sink,
         isReceiver,
         isSafeCall,
-        { this.postponedAtoms += it },
         typeProvider
     )
 }

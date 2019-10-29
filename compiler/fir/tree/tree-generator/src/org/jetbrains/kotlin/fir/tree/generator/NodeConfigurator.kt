@@ -35,7 +35,7 @@ import org.jetbrains.kotlin.serialization.deserialization.descriptors.Deserializ
 object NodeConfigurator : AbstractFieldConfigurator() {
     fun configureFields() = with(FirTreeBuilder) {
         AbstractFirTreeBuilder.baseFirElement.configure {
-            +field("psi", psiElementType, nullable = true)
+            +field("source", sourceElementType, nullable = true)
         }
 
         annotationContainer.configure {
@@ -266,6 +266,10 @@ object NodeConfigurator : AbstractFieldConfigurator() {
             parentArg(memberFunction, "F", simpleFunction)
         }
 
+        contractDescriptionOwner.configure {
+            +field(contractDescription).withTransform()
+        }
+
         property.configure {
             parentArg(variable, "F", property)
             parentArg(callableMemberDeclaration, "F", property)
@@ -396,6 +400,10 @@ object NodeConfigurator : AbstractFieldConfigurator() {
             +field("originalType", typeRef)
         }
 
+        callableReferenceAccess.configure {
+            +field("calleeReference", namedReference)
+        }
+
         getClassCall.configure {
             +field("argument", expression)
         }
@@ -444,8 +452,12 @@ object NodeConfigurator : AbstractFieldConfigurator() {
             +field("candidateSymbol", abstractFirBasedSymbolType, "*", nullable = true)
         }
 
-        resolvedCallableReference.configure {
+        resolvedNamedReference.configure {
             +field("resolvedSymbol", abstractFirBasedSymbolType, "*")
+        }
+
+        resolvedCallableReference.configure {
+            +fieldList("inferredTypeArguments", coneKotlinTypeType)
         }
 
         delegateFieldReference.configure {
@@ -515,6 +527,10 @@ object NodeConfigurator : AbstractFieldConfigurator() {
 
         errorNamedReference.configure {
             +stringField("errorReason")
+        }
+
+        contractDescription.configure {
+            +fieldList("effects", effectDeclarationType)
         }
     }
 }

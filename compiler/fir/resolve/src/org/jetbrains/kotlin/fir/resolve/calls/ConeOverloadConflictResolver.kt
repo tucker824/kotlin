@@ -61,7 +61,7 @@ class ConeOverloadConflictResolver(
         return FlatSignature(
             call,
             constructor.typeParameters.map { it.symbol },
-            call.argumentMapping!!.map {  it.value.argumentType() },
+            computeParameterTypes(call, constructor),
             //constructor.receiverTypeRef != null,
             false,
             constructor.valueParameters.any { it.isVararg },
@@ -81,14 +81,22 @@ class ConeOverloadConflictResolver(
         return FlatSignature(
             call,
             function.typeParameters.map { it.symbol },
-            listOfNotNull<ConeKotlinType>(function.receiverTypeRef?.coneTypeUnsafe()) +
-                    call.argumentMapping?.map { it.value.argumentType() }.orEmpty(),
+            computeParameterTypes(call, function),
             function.receiverTypeRef != null,
             function.valueParameters.any { it.isVararg },
             function.valueParameters.count { it.defaultValue != null },
             function.isExpect,
             false // TODO
         )
+    }
+
+    private fun computeParameterTypes(
+        call: Candidate,
+        function: FirFunction<*>
+    ): List<ConeKotlinType> {
+        return (call.resultingTypeForCallableReference?.typeArguments?.map { it as ConeKotlinType }
+            ?: (listOfNotNull<ConeKotlinType>(function.receiverTypeRef?.coneTypeUnsafe()) +
+                    call.argumentMapping?.map { it.value.argumentType() }.orEmpty()))
     }
 
     private fun createFlatSignature(call: Candidate, variable: FirVariable<*>): FlatSignature<Candidate> {

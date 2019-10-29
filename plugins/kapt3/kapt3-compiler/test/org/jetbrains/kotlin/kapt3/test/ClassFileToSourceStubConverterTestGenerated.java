@@ -88,6 +88,11 @@ public class ClassFileToSourceStubConverterTestGenerated extends AbstractClassFi
         runTest("plugins/kapt3/kapt3-compiler/testData/converter/defaultImpls.kt");
     }
 
+    @TestMetadata("deprecated.kt")
+    public void testDeprecated() throws Exception {
+        runTest("plugins/kapt3/kapt3-compiler/testData/converter/deprecated.kt");
+    }
+
     @TestMetadata("enumImports.kt")
     public void testEnumImports() throws Exception {
         runTest("plugins/kapt3/kapt3-compiler/testData/converter/enumImports.kt");
@@ -406,5 +411,10 @@ public class ClassFileToSourceStubConverterTestGenerated extends AbstractClassFi
     @TestMetadata("topLevel.kt")
     public void testTopLevel() throws Exception {
         runTest("plugins/kapt3/kapt3-compiler/testData/converter/topLevel.kt");
+    }
+
+    @TestMetadata("unsafePropertyInitializers.kt")
+    public void testUnsafePropertyInitializers() throws Exception {
+        runTest("plugins/kapt3/kapt3-compiler/testData/converter/unsafePropertyInitializers.kt");
     }
 }

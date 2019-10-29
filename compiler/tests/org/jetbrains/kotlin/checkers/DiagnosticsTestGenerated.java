@@ -2525,6 +2525,11 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTest {
                     runTest("compiler/testData/diagnostics/tests/callableReference/resolve/chooseCallableReferenceDependingOnInferredReceiver.kt");
                 }
 
+                @TestMetadata("chooseMostSpecificCandidateUsingCandidateDescriptorNotReflectionType.kt")
+                public void testChooseMostSpecificCandidateUsingCandidateDescriptorNotReflectionType() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/callableReference/resolve/chooseMostSpecificCandidateUsingCandidateDescriptorNotReflectionType.kt");
+                }
+
                 @TestMetadata("chooseOuterCallBySingleCallableReference.kt")
                 public void testChooseOuterCallBySingleCallableReference() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/callableReference/resolve/chooseOuterCallBySingleCallableReference.kt");
@@ -10784,6 +10789,16 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTest {
                 @TestMetadata("kt3344.kt")
                 public void testKt3344() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/regressions/kt3344.kt");
+                }
+
+                @TestMetadata("kt34029.kt")
+                public void testKt34029() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/regressions/kt34029.kt");
+                }
+
+                @TestMetadata("kt34282.kt")
+                public void testKt34282() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/regressions/kt34282.kt");
                 }
 
                 @TestMetadata("kt3496.kt")

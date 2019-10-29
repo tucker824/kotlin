@@ -5,8 +5,8 @@
 
 package org.jetbrains.kotlin.fir.resolve.dfa.cfg
 
-import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.fir.FirElement
+import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.declarations.FirAnonymousInitializer
 import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirProperty
@@ -156,6 +156,9 @@ class StubNode(owner: ControlFlowGraph, level: Int) : CFGNode<FirStub>(owner, le
 class VariableDeclarationNode(owner: ControlFlowGraph, override val fir: FirProperty, level: Int) : CFGNode<FirProperty>(owner, level)
 class VariableAssignmentNode(owner: ControlFlowGraph, override val fir: FirVariableAssignment, level: Int) : CFGNode<FirVariableAssignment>(owner, level)
 
+class EnterContractNode(owner: ControlFlowGraph, override val fir: FirFunctionCall, level: Int) : CFGNode<FirFunctionCall>(owner, level), EnterNode
+class ExitContractNode(owner: ControlFlowGraph, override val fir: FirFunctionCall, level: Int) : CFGNode<FirFunctionCall>(owner, level), ExitNode
+
 // ----------------------------------- Other -----------------------------------
 
 class AnnotationEnterNode(owner: ControlFlowGraph, override val fir: FirAnnotationCall, level: Int) : CFGNode<FirAnnotationCall>(owner, level), EnterNode
@@ -164,7 +167,7 @@ class AnnotationExitNode(owner: ControlFlowGraph, override val fir: FirAnnotatio
 // ----------------------------------- Stub -----------------------------------
 
 object FirStub : FirElement {
-    override val psi: PsiElement? get() = null
+    override val source: FirSourceElement? get() = null
 
     override fun <R, D> acceptChildren(visitor: FirVisitor<R, D>, data: D) {}
 

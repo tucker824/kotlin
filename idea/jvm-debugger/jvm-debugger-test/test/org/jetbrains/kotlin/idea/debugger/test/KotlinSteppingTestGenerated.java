@@ -422,6 +422,31 @@ public class KotlinSteppingTestGenerated extends AbstractKotlinSteppingTest {
             runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/stepOver/inlineCallInForRangeExpression.kt");
         }
 
+        @TestMetadata("inlineFunInClassInitializer.kt")
+        public void testInlineFunInClassInitializer() throws Exception {
+            runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/stepOver/inlineFunInClassInitializer.kt");
+        }
+
+        @TestMetadata("inlineFunInClassInitializer2.kt")
+        public void testInlineFunInClassInitializer2() throws Exception {
+            runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/stepOver/inlineFunInClassInitializer2.kt");
+        }
+
+        @TestMetadata("inlineFunInConstructor.kt")
+        public void testInlineFunInConstructor() throws Exception {
+            runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/stepOver/inlineFunInConstructor.kt");
+        }
+
+        @TestMetadata("inlineFunInLazyProperty.kt")
+        public void testInlineFunInLazyProperty() throws Exception {
+            runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/stepOver/inlineFunInLazyProperty.kt");
+        }
+
+        @TestMetadata("inlineFunInPropertyGetter.kt")
+        public void testInlineFunInPropertyGetter() throws Exception {
+            runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/stepOver/inlineFunInPropertyGetter.kt");
+        }
+
         @TestMetadata("inlineFunctionSameLines.kt")
         public void testInlineFunctionSameLines() throws Exception {
             runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/stepOver/inlineFunctionSameLines.kt");
@@ -1234,6 +1259,11 @@ public class KotlinSteppingTestGenerated extends AbstractKotlinSteppingTest {
         @TestMetadata("smartStepIntoWithOverrides.kt")
         public void testSmartStepIntoWithOverrides() throws Exception {
             runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/custom/smartStepIntoWithOverrides.kt");
+        }
+
+        @TestMetadata("stepIntoLibWithSources.kt")
+        public void testStepIntoLibWithSources() throws Exception {
+            runTest("idea/jvm-debugger/jvm-debugger-test/testData/stepping/custom/stepIntoLibWithSources.kt");
         }
 
         @TestMetadata("stepIntoStdlibInlineFun2step.kt")

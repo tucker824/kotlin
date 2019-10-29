@@ -90,6 +90,16 @@ class FirRenderer(builder: StringBuilder) : FirVisitorVoid() {
         }
     }
 
+    private fun List<ConeKotlinType>.renderTypesSeparated() {
+        for ((index, element) in this.withIndex()) {
+            if (index > 0) {
+                print(", ")
+            }
+            print(element.render())
+        }
+    }
+
+
     private fun List<FirValueParameter>.renderParameters() {
         print("(")
         renderSeparated()
@@ -797,15 +807,27 @@ class FirRenderer(builder: StringBuilder) : FirVisitorVoid() {
         print("|")
     }
 
-    override fun visitResolvedCallableReference(resolvedCallableReference: FirResolvedCallableReference) {
+    override fun visitResolvedNamedReference(resolvedNamedReference: FirResolvedNamedReference) {
         print("R|")
-        val isFakeOverride = (resolvedCallableReference.resolvedSymbol as? FirNamedFunctionSymbol)?.isFakeOverride == true
+        val isFakeOverride = (resolvedNamedReference.resolvedSymbol as? FirNamedFunctionSymbol)?.isFakeOverride == true
 
         if (isFakeOverride) {
             print("FakeOverride<")
         }
-        val symbol = resolvedCallableReference.resolvedSymbol
+        val symbol = resolvedNamedReference.resolvedSymbol
         print(symbol.render())
+
+
+        if (resolvedNamedReference is FirResolvedCallableReference) {
+            if (resolvedNamedReference.inferredTypeArguments.isNotEmpty()) {
+                print("<")
+
+                resolvedNamedReference.inferredTypeArguments.renderTypesSeparated()
+
+                print(">")
+            }
+        }
+
         if (isFakeOverride) {
             when (symbol) {
                 is FirNamedFunctionSymbol -> {
@@ -820,6 +842,10 @@ class FirRenderer(builder: StringBuilder) : FirVisitorVoid() {
             print(">")
         }
         print("|")
+    }
+
+    override fun visitResolvedCallableReference(resolvedCallableReference: FirResolvedCallableReference) {
+        visitResolvedNamedReference(resolvedCallableReference)
     }
 
     override fun visitThisReference(thisReference: FirThisReference) {
