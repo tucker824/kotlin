@@ -218,6 +218,37 @@ class KmPackage : KmPackageVisitor(), KmDeclarationContainer {
 }
 
 /**
+ * Represents a Kotlin package fragment.
+ */
+class KmPackageFragment : KmPackageFragmentVisitor() {
+
+    /**
+     * Top-level functions, typealiases and properties in the package fragment.
+     */
+    var pkg: KmPackage? = null
+
+    /**
+     * Classes in the package fragment.
+     */
+    val classes: MutableList<KmClass> = ArrayList()
+
+    private val extensions: List<KmPackageFragmentExtension> =
+        MetadataExtensions.INSTANCES.map(MetadataExtensions::createPackageFragmentExtensions)
+
+    /**
+     * Populates the given visitor with data in this package fragment.
+     *
+     * @param visitor the visitor which will visit data in the package fragment.
+     */
+    fun accept(visitor: KmPackageFragmentVisitor) {
+        pkg?.let { visitor.visitPackage()?.let(it::accept) }
+        classes.forEach { visitor.visitClass()?.let(it::accept) }
+        extensions.forEach { visitor.visitExtensions(it.type)?.let(it::accept) }
+        visitor.visitEnd()
+    }
+}
+
+/**
  * Represents a synthetic class generated for a Kotlin lambda.
  */
 class KmLambda : KmLambdaVisitor() {

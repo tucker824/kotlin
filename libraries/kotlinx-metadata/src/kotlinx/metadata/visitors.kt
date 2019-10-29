@@ -180,6 +180,41 @@ abstract class KmPackageVisitor @JvmOverloads constructor(delegate: KmPackageVis
 }
 
 /**
+ * A visitor to visit package fragments.
+ *
+ * When using this class, [visitEnd] must be called exactly once and after calls to all other visit* methods.
+ */
+abstract class KmPackageFragmentVisitor @JvmOverloads constructor(private val delegate: KmPackageFragmentVisitor? = null) {
+
+    /**
+     * Visits package within package fragment.
+     */
+    open fun visitPackage(): KmPackageVisitor? =
+        delegate?.visitPackage()
+
+    /**
+     * Visits class within package fragment.
+     */
+    open fun visitClass(): KmClassVisitor? =
+        delegate?.visitClass()
+
+    /**
+     * Visits the extensions of the given type on the package fragment.
+     *
+     * @param type the type of extension visitor to be returned.
+     */
+    open fun visitExtensions(type: KmExtensionType): KmPackageFragmentExtensionVisitor? =
+        delegate?.visitExtensions(type)
+
+    /**
+     * Visits the end of the package fragment.
+     */
+    open fun visitEnd() {
+        delegate?.visitEnd()
+    }
+}
+
+/**
  * A visitor to visit the metadata of a synthetic class generated for a Kotlin lambda.
  *
  * When using this class, [visitFunction] must be called first, followed by [visitEnd].

@@ -48,6 +48,9 @@ internal class JvmMetadataExtensions : MetadataExtensions {
         ext.visitEnd()
     }
 
+    // PackageFragment is not used by JVM backend.
+    override fun readPackageFragmentExtensions(v: KmPackageFragmentVisitor, proto: ProtoBuf.PackageFragment, c: ReadContext) {}
+
     override fun readFunctionExtensions(v: KmFunctionVisitor, proto: ProtoBuf.Function, c: ReadContext) {
         val ext = v.visitExtensions(JvmFunctionExtensionVisitor.TYPE) as? JvmFunctionExtensionVisitor ?: return
         ext.visit(JvmProtoBufUtil.getJvmMethodSignature(proto, c.strings, c.types)?.wrapAsPublic())
@@ -143,6 +146,13 @@ internal class JvmMetadataExtensions : MetadataExtensions {
             }
         }
     }
+
+    // PackageFragment is not used by JVM backend.
+    override fun writePackageFragmentExtensions(
+        type: KmExtensionType,
+        proto: ProtoBuf.PackageFragment.Builder,
+        c: WriteContext
+    ): KmPackageFragmentExtensionVisitor? = null
 
     override fun writeFunctionExtensions(
         type: KmExtensionType, proto: ProtoBuf.Function.Builder, c: WriteContext
@@ -261,6 +271,9 @@ internal class JvmMetadataExtensions : MetadataExtensions {
     override fun createClassExtension(): KmClassExtension = JvmClassExtension()
 
     override fun createPackageExtension(): KmPackageExtension = JvmPackageExtension()
+
+    override fun createPackageFragmentExtensions(): KmPackageFragmentExtension =
+        error("metadata-jvm doesn't have any extensions for package fragment!")
 
     override fun createFunctionExtension(): KmFunctionExtension = JvmFunctionExtension()
 

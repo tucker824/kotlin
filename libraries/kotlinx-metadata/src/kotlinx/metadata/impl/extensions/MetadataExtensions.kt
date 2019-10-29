@@ -16,6 +16,8 @@ interface MetadataExtensions {
 
     fun readPackageExtensions(v: KmPackageVisitor, proto: ProtoBuf.Package, c: ReadContext)
 
+    fun readPackageFragmentExtensions(v: KmPackageFragmentVisitor, proto: ProtoBuf.PackageFragment, c: ReadContext)
+
     fun readFunctionExtensions(v: KmFunctionVisitor, proto: ProtoBuf.Function, c: ReadContext)
 
     fun readPropertyExtensions(v: KmPropertyVisitor, proto: ProtoBuf.Property, c: ReadContext)
@@ -29,6 +31,8 @@ interface MetadataExtensions {
     fun writeClassExtensions(type: KmExtensionType, proto: ProtoBuf.Class.Builder, c: WriteContext): KmClassExtensionVisitor?
 
     fun writePackageExtensions(type: KmExtensionType, proto: ProtoBuf.Package.Builder, c: WriteContext): KmPackageExtensionVisitor?
+
+    fun writePackageFragmentExtensions(type: KmExtensionType, proto: ProtoBuf.PackageFragment.Builder, c: WriteContext): KmPackageFragmentExtensionVisitor?
 
     fun writeFunctionExtensions(type: KmExtensionType, proto: ProtoBuf.Function.Builder, c: WriteContext): KmFunctionExtensionVisitor?
 
@@ -47,6 +51,8 @@ interface MetadataExtensions {
     fun createClassExtension(): KmClassExtension
 
     fun createPackageExtension(): KmPackageExtension
+
+    fun createPackageFragmentExtensions(): KmPackageFragmentExtension
 
     fun createFunctionExtension(): KmFunctionExtension
 
