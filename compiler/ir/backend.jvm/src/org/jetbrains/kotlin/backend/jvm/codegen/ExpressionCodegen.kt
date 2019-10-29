@@ -204,10 +204,6 @@ class ExpressionCodegen(
     }
 
     private fun generateNonNullAssertions() {
-        // TODO: the inliner does not like the assertions. Fix it.
-        if (irFunction.parentAsClass.origin == JvmLoweredDeclarationOrigin.CONTINUATION_CLASS) {
-            return
-        }
         if (state.isParamAssertionsDisabled)
             return
 
@@ -223,7 +219,8 @@ class ExpressionCodegen(
                 irFunction.origin == IrDeclarationOrigin.BRIDGE_SPECIAL ||
                 irFunction.origin == JvmLoweredDeclarationOrigin.DEFAULT_IMPLS_BRIDGE ||
                 irFunction.origin == JvmLoweredDeclarationOrigin.JVM_STATIC_WRAPPER ||
-                irFunction.origin == JvmLoweredDeclarationOrigin.MULTIFILE_BRIDGE
+                irFunction.origin == JvmLoweredDeclarationOrigin.MULTIFILE_BRIDGE ||
+                irFunction.parentAsClass.origin == JvmLoweredDeclarationOrigin.CONTINUATION_CLASS
 
         if (notCallableFromJava)
             return
