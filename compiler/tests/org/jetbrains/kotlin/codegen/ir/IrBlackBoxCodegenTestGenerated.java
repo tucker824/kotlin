@@ -6226,8 +6226,8 @@ public class IrBlackBoxCodegenTestGenerated extends AbstractIrBlackBoxCodegenTes
             }
 
             @TestMetadata("lambdaWithMultipleParameters_ir.kt")
-            public void testLambdaWithMultipleParameters_ir_1_3() throws Exception {
-                runTestWithPackageReplacement("compiler/testData/codegen/box/coroutines/bridges/lambdaWithMultipleParameters_ir.kt", "kotlin.coroutines");
+            public void testLambdaWithMultipleParameters_ir() throws Exception {
+                runTest("compiler/testData/codegen/box/coroutines/bridges/lambdaWithMultipleParameters_ir.kt");
             }
         }
 

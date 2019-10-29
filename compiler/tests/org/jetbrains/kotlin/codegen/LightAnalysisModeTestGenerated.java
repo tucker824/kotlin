@@ -6649,13 +6649,8 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             }
 
             @TestMetadata("lambdaWithMultipleParameters_ir.kt")
-            public void ignoreLambdaWithMultipleParameters_ir_1_2() throws Exception {
-                runTestWithPackageReplacement("compiler/testData/codegen/box/coroutines/bridges/lambdaWithMultipleParameters_ir.kt", "kotlin.coroutines.experimental");
-            }
-
-            @TestMetadata("lambdaWithMultipleParameters_ir.kt")
-            public void ignoreLambdaWithMultipleParameters_ir_1_3() throws Exception {
-                runTestWithPackageReplacement("compiler/testData/codegen/box/coroutines/bridges/lambdaWithMultipleParameters_ir.kt", "kotlin.coroutines");
+            public void ignoreLambdaWithMultipleParameters_ir() throws Exception {
+                runTest("compiler/testData/codegen/box/coroutines/bridges/lambdaWithMultipleParameters_ir.kt");
             }
 
             private void runTest(String testDataFilePath) throws Exception {

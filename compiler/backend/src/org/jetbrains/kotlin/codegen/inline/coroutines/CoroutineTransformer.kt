@@ -58,10 +58,6 @@ class CoroutineTransformer(
             if (state.languageVersionSettings.isReleaseCoroutines()) superClassName.endsWith("ContinuationImpl")
             else methods.any { it.name == "getLabel" }
 
-    private fun crossinlineLambda(): PsiExpressionLambda? = inliningContext.expressionMap.values.find {
-        it is PsiExpressionLambda && it.isCrossInline
-    }?.cast()
-
     private fun isStateMachine(node: MethodNode): Boolean =
         node.instructions.asSequence().any { insn -> insn is LdcInsnNode && insn.cst == ILLEGAL_STATE_ERROR_MESSAGE }
 
@@ -94,17 +90,16 @@ class CoroutineTransformer(
                 ArrayUtil.toStringArray(node.exceptions)
             )
         ) {
+            val sourceCompilerForInline = inliningContext.root.sourceCompilerForInline
             val stateMachineBuilder = surroundNoinlineCallsWithMarkers(
                 node,
                 CoroutineTransformerMethodVisitor(
                     createNewMethodFrom(node, name), node.access, name, node.desc, null, null,
                     obtainClassBuilderForCoroutineState = { classBuilder },
-                    reportSuspensionPointInsideMonitor = {
-                        inliningContext.root.sourceCompilerForInline.reportSuspensionPointInsideMonitor(it)
-                    },
+                    reportSuspensionPointInsideMonitor = { sourceCompilerForInline.reportSuspensionPointInsideMonitor(it) },
                     // TODO: this linenumbers might not be correct and since they are used only for step-over, check them.
-                    lineNumber = inliningContext.root.sourceCompilerForInline.getLineNumber(),
-                    sourceFile = inliningContext.root.sourceCompilerForInline.getSourceFile(),
+                    lineNumber = sourceCompilerForInline.inlineCallSiteInfo.lineNumber,
+                    sourceFile = sourceCompilerForInline.callsiteFile?.name ?: "",
                     languageVersionSettings = state.languageVersionSettings,
                     shouldPreserveClassInitialization = state.constructorCallNormalizationMode.shouldPreserveClassInitialization,
                     containingClassInternalName = classBuilder.thisName,
@@ -137,16 +132,15 @@ class CoroutineTransformer(
                 ArrayUtil.toStringArray(node.exceptions)
             )
         ) {
+            val sourceCompilerForInline = inliningContext.root.sourceCompilerForInline
             val stateMachineBuilder = surroundNoinlineCallsWithMarkers(
                 node,
                 CoroutineTransformerMethodVisitor(
                     createNewMethodFrom(node, name), node.access, name, node.desc, null, null,
                     obtainClassBuilderForCoroutineState = { (inliningContext as RegeneratedClassContext).continuationBuilders[continuationClassName]!! },
-                    reportSuspensionPointInsideMonitor = {
-                        inliningContext.root.sourceCompilerForInline.reportSuspensionPointInsideMonitor(it)
-                    },
-                    lineNumber = inliningContext.root.sourceCompilerForInline.getLineNumber(),
-                    sourceFile = inliningContext.root.sourceCompilerForInline.getSourceFile(),
+                    reportSuspensionPointInsideMonitor = { sourceCompilerForInline.reportSuspensionPointInsideMonitor(it) },
+                    lineNumber = sourceCompilerForInline.inlineCallSiteInfo.lineNumber,
+                    sourceFile = sourceCompilerForInline.callsiteFile?.name ?: "",
                     languageVersionSettings = state.languageVersionSettings,
                     shouldPreserveClassInitialization = state.constructorCallNormalizationMode.shouldPreserveClassInitialization,
                     containingClassInternalName = classBuilder.thisName,
