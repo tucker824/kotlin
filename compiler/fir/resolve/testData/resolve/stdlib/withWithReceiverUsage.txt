@@ -1,0 +1,23 @@
+FILE: withWithReceiverUsage.kt
+    public final class A : R|kotlin/Any| {
+        public constructor(): R|A| {
+            super<R|kotlin/Any|>()
+        }
+
+        public final fun foo(): R|kotlin/Unit| {
+        }
+
+    }
+    public final inline fun <T> myWith(receiver: R|T|, block: R|kotlin/Function1<T, kotlin/Unit>|): R|kotlin/Unit| {
+        R|<local>/receiver|.<Unresolved name: block>#()
+    }
+    public final fun test_1(): R|kotlin/Unit| {
+        R|/myWith|<R|A|>(R|/A.A|(), <L> = myWith@fun <anonymous>(it: R|A|): R|kotlin/Unit| <kind=UNKNOWN>  {
+            <Unresolved name: foo>#()
+        }
+        )
+        R|kotlin/with|<R|A|, R|kotlin/Unit|>(R|/A.A|(), <L> = with@fun R|A|.<anonymous>(it: R|A|): R|kotlin/Unit| <kind=EXACTLY_ONCE>  {
+            this@R|/A|.R|/A.foo|()
+        }
+        )
+    }

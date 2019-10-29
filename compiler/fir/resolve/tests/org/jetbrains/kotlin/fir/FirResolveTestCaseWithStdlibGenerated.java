@@ -33,6 +33,11 @@ public class FirResolveTestCaseWithStdlibGenerated extends AbstractFirResolveTes
         runTest("compiler/fir/resolve/testData/resolve/stdlib/anonymousInDelegate.kt");
     }
 
+    @TestMetadata("applyWithReceiverUsage.kt")
+    public void testApplyWithReceiverUsage() throws Exception {
+        runTest("compiler/fir/resolve/testData/resolve/stdlib/applyWithReceiverUsage.kt");
+    }
+
     @TestMetadata("arrayFirstOrNull.kt")
     public void testArrayFirstOrNull() throws Exception {
         runTest("compiler/fir/resolve/testData/resolve/stdlib/arrayFirstOrNull.kt");
@@ -146,5 +151,10 @@ public class FirResolveTestCaseWithStdlibGenerated extends AbstractFirResolveTes
     @TestMetadata("unaryOperators.kt")
     public void testUnaryOperators() throws Exception {
         runTest("compiler/fir/resolve/testData/resolve/stdlib/unaryOperators.kt");
+    }
+
+    @TestMetadata("withWithReceiverUsage.kt")
+    public void testWithWithReceiverUsage() throws Exception {
+        runTest("compiler/fir/resolve/testData/resolve/stdlib/withWithReceiverUsage.kt");
     }
 }

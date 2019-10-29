@@ -1,0 +1,14 @@
+FILE: applyWithReceiverUsage.kt
+    public final inline fun <T> R|T|.myApply(block: R|kotlin/Function1<T, kotlin/Unit>|): R|kotlin/Unit| {
+        <Inapplicable(PARAMETER_MAPPING_ERROR): [kotlin/Function1.invoke]>#()
+    }
+    public final fun test(): R|kotlin/Unit| {
+        R|kotlin/collections/mutableListOf|<R|kotlin/String|>().R|kotlin/apply|<R|kotlin/collections/MutableList<kotlin/String>|>(<L> = apply@fun R|kotlin/collections/MutableList<kotlin/String>|.<anonymous>(it: R|kotlin/collections/MutableList<kotlin/String>|): R|kotlin/Unit| <kind=EXACTLY_ONCE>  {
+            this@R|kotlin/collections/MutableList|.R|FakeOverride<kotlin/collections/MutableList.add: R|kotlin/Boolean|>|(String(Alpha))
+        }
+        )
+        R|kotlin/collections/mutableListOf|<R|kotlin/String|>().R|/myApply|<R|kotlin/collections/MutableList<kotlin/String>|>(<L> = myApply@fun <anonymous>(it: R|kotlin/collections/MutableList<kotlin/String>|): R|kotlin/Unit| <kind=UNKNOWN>  {
+            <Unresolved name: add>#(String(Omega))
+        }
+        )
+    }
