@@ -40,6 +40,7 @@ import org.jetbrains.kotlin.serialization.deserialization.ContractDeserializer
 import org.jetbrains.kotlin.serialization.deserialization.DeserializationComponents
 import org.jetbrains.kotlin.serialization.deserialization.DeserializationConfiguration
 import org.jetbrains.kotlin.storage.LockBasedStorageManager
+import org.jetbrains.kotlin.storage.LockNames
 import org.jetbrains.kotlin.storage.StorageManager
 import org.jetbrains.kotlin.types.checker.NewKotlinTypeChecker
 import org.jetbrains.kotlin.utils.Jsr305State
@@ -52,7 +53,7 @@ class RuntimeModuleData private constructor(
 
     companion object {
         fun create(classLoader: ClassLoader): RuntimeModuleData {
-            val storageManager = LockBasedStorageManager("RuntimeModuleData")
+            val storageManager = LockBasedStorageManager(LockNames.Modules.lockOrder, "RuntimeModuleData")
             val builtIns = JvmBuiltIns(storageManager, JvmBuiltIns.Kind.FROM_DEPENDENCIES)
             val module = ModuleDescriptorImpl(Name.special("<runtime module for $classLoader>"), storageManager, builtIns)
             builtIns.builtInsModule = module
