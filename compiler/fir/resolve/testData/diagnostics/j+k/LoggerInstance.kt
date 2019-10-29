@@ -1,3 +1,4 @@
+// FULL_JDK
 // FILE: Logger.java
 
 public class Logger {

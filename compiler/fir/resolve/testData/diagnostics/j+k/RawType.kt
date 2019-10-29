@@ -9,5 +9,5 @@ public class JavaClass {
 class Some
 
 fun test(list: ArrayList<Some>) {
-    foo(list)
+    JavaClass.foo(list)
 }
