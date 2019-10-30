@@ -229,18 +229,17 @@ class KotlinCodeBlockModificationListener(
                 }
 
                 is KtProperty -> {
-                    // adding annotations to accessor is the same as change contract of property
-                    if (!(element is KtAnnotated && element.annotations.isEmpty()) &&
-                        blockDeclaration.typeReference != null
-                    ) {
-                        for (accessor in blockDeclaration.accessors) {
-                            (accessor.initializer ?: accessor.bodyExpression)
-                                ?.takeIf { it.isAncestor(element) || (element is KtPropertyAccessor && element.isAncestor(it)) }
+                    if (blockDeclaration.typeReference != null) {
+                        val accessors =
+                            blockDeclaration.accessors.map { it.initializer ?: it.bodyExpression } + blockDeclaration.initializer
+                        for (accessor in accessors) {
+                            accessor?.takeIf {
+                                it.isAncestor(element) &&
+                                        // adding annotations to accessor is the same as change contract of property
+                                        (element !is KtAnnotated || element.annotationEntries.isEmpty())
+                            }
                                 ?.let { return BlockModificationScopeElement(blockDeclaration, it) }
                         }
-                        blockDeclaration.initializer
-                            ?.takeIf { it.isAncestor(element) }
-                            ?.let { return BlockModificationScopeElement(blockDeclaration, it) }
                     }
                 }
 
