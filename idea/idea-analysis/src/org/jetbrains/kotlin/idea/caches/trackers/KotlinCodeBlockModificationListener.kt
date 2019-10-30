@@ -229,7 +229,10 @@ class KotlinCodeBlockModificationListener(
                 }
 
                 is KtProperty -> {
-                    if (blockDeclaration.typeReference != null) {
+                    // adding annotations to accessor is the same as change contract of property
+                    if (!(element is KtAnnotated && element.annotations.isEmpty()) &&
+                        blockDeclaration.typeReference != null
+                    ) {
                         for (accessor in blockDeclaration.accessors) {
                             (accessor.initializer ?: accessor.bodyExpression)
                                 ?.takeIf { it.isAncestor(element) || (element is KtPropertyAccessor && element.isAncestor(it)) }
