@@ -57,6 +57,7 @@ class DeclarationStubGenerator(
     init {
         typeTranslator.constantValueGenerator = constantValueGenerator
         constantValueGenerator.typeTranslator = typeTranslator
+        irProviders.filterIsInstance<LazyIrProvider>().forEach { it.declarationStubGenerator = this }
     }
 
     private fun getDeclaration(symbol: IrSymbol): IrDeclaration? {
