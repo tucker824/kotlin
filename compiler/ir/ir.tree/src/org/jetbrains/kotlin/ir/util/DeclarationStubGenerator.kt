@@ -49,7 +49,7 @@ class DeclarationStubGenerator(
         }
 
 
-    private val typeTranslator = TypeTranslator(lazyTable, languageVersionSettings, moduleDescriptor.builtIns, LazyScopedTypeParametersResolver(lazyTable), true)
+    val typeTranslator = TypeTranslator(lazyTable, languageVersionSettings, moduleDescriptor.builtIns, LazyScopedTypeParametersResolver(lazyTable), true)
     private val constantValueGenerator = ConstantValueGenerator(moduleDescriptor, lazyTable)
 
     private val facadeClassMap = mutableMapOf<DeserializedContainerSource, IrClass?>()
