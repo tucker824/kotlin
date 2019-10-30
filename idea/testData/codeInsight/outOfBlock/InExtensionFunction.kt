@@ -1,4 +1,4 @@
-// FALSE
+// OUT_OF_CODE_BLOCK: FALSE
 
 class A {
     fun foo(): Int = 12

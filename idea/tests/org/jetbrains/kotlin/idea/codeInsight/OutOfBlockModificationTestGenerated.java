@@ -163,6 +163,16 @@ public class OutOfBlockModificationTestGenerated extends AbstractOutOfBlockModif
         runTest("idea/testData/codeInsight/outOfBlock/InNestedClassFunNoTypeBlockExpression.kt");
     }
 
+    @TestMetadata("InPropertyAccessorSpecifyType.kt")
+    public void testInPropertyAccessorSpecifyType() throws Exception {
+        runTest("idea/testData/codeInsight/outOfBlock/InPropertyAccessorSpecifyType.kt");
+    }
+
+    @TestMetadata("InPropertyAccessorWithAnnotation.kt")
+    public void testInPropertyAccessorWithAnnotation() throws Exception {
+        runTest("idea/testData/codeInsight/outOfBlock/InPropertyAccessorWithAnnotation.kt");
+    }
+
     @TestMetadata("InPropertyAccessorWithInference.kt")
     public void testInPropertyAccessorWithInference() throws Exception {
         runTest("idea/testData/codeInsight/outOfBlock/InPropertyAccessorWithInference.kt");

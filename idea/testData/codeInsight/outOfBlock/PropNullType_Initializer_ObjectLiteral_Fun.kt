@@ -1,4 +1,4 @@
-// FALSE
+// OUT_OF_CODE_BLOCK: FALSE
 
 // Problem with lazy initialization of nullable properties
 interface Some

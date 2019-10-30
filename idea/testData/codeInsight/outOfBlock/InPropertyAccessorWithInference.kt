@@ -1,4 +1,4 @@
-// TRUE
+// OUT_OF_CODE_BLOCK: TRUE
 val test : Int
     get() = <caret>12
 
