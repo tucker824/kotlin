@@ -307,6 +307,13 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
     )
     var useFir: Boolean by FreezableVar(false)
 
+    @Argument(
+        value = "-Xmpp-klibs",
+        description = "Enable experimental support for multi-platform klib libraries"
+    )
+    var mppKlibs: Boolean by FreezableVar(false)
+
+
     @Argument(value = "-Xdisable-default-scripting-plugin", description = "Do not enable scripting plugin by default")
     var disableDefaultScriptingPlugin: Boolean by FreezableVar(false)
 
