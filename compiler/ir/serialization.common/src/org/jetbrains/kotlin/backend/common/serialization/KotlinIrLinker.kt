@@ -142,7 +142,6 @@ abstract class KotlinIrLinker(
 
         inner class IrDeserializerForFile(
             private var annotations: List<ProtoConstructorCall>?,
-            forcedDeclarations: List<Int>,
             private val fileIndex: Int,
             onlyHeaders: Boolean
         ) : IrFileDeserializer(logger, builtIns, symbolTable) {
@@ -160,14 +159,6 @@ abstract class KotlinIrLinker(
             private val fileLocalResolvedForwardDeclarations = mutableMapOf<UniqId, UniqId>()
 
             val fileLocalDeserializationState = DeserializationState.SimpleDeserializationState()
-
-            init {
-                // Forced declarations (e.g. top-level initializers) must be deserialized before all other declarations.
-                // Thus we schedule their deserialization in deserializer's constructor.
-                forcedDeclarations.forEach {
-                    fileLocalDeserializationState.addUniqID(UniqId(loadSymbolData(it).topLevelUniqIdIndex))
-                }
-            }
 
             fun deserializeDeclaration(key: UniqId): IrDeclaration {
                 return deserializeDeclaration(loadTopLevelDeclarationProto(key), file)
@@ -413,12 +404,14 @@ abstract class KotlinIrLinker(
 
             val fileEntry = NaiveSourceBasedFileEntryImpl(fileName, fileProto.fileEntry.lineStartOffsetsList.toIntArray())
 
-            val fileDeserializer = IrDeserializerForFile(
-                fileProto.annotationList,
-                fileProto.explicitlyExportedToCompilerList,
-                fileIndex,
-                !deserializationStrategy.needBodies
-            )
+            val fileDeserializer =
+                IrDeserializerForFile(fileProto.annotationList, fileIndex, !deserializationStrategy.needBodies).apply {
+                    // Explicitly exported declarations (e.g. top-level initializers) must be deserialized before all other declarations.
+                    // Thus we schedule their deserialization in deserializer's constructor.
+                    fileProto.explicitlyExportedToCompilerList.forEach {
+                        fileLocalDeserializationState.addUniqID(UniqId(loadSymbolData(it).topLevelUniqIdIndex))
+                    }
+                }
 
             val fqName = fileDeserializer.deserializeFqName(fileProto.fqNameList)
 
