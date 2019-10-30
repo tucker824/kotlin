@@ -161,8 +161,14 @@ private val innerClassesPhase = makeIrFilePhase(
     prerequisite = setOf(localDeclarationsPhase)
 )
 
-private val initializersPhase = makeIrFilePhase<JvmBackendContext>(
-    { context -> InitializersLowering(context, JvmLoweredDeclarationOrigin.CLASS_STATIC_INITIALIZER, clinitNeeded = true) },
+private val staticInitializersPhase = makeIrFilePhase(
+    ::StaticInitializersLowering,
+    name = "StaticInitializers",
+    description = "Move code from object init blocks and static field initializers to a new <clinit> function"
+)
+
+private val initializersPhase = makeIrFilePhase(
+    ::InitializersLowering,
     name = "Initializers",
     description = "Merge init blocks and field initializers into constructors",
     stickyPostconditions = setOf(fun(irFile: IrFile) {
@@ -263,6 +269,7 @@ private val jvmFilePhases =
 
         enumClassPhase then
         objectClassPhase then
+        staticInitializersPhase then
         initializersPhase then
         collectionStubMethodLowering then
         functionNVarargBridgePhase then
