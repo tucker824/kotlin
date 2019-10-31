@@ -404,12 +404,9 @@ open class ClassCodegen protected constructor(
         // or constructor, the name and type of the function is recorded as well.
         if (parentClassCodegen != null) {
             val outerClassName = parentClassCodegen.type.internalName
-            // TODO: Since the class could have been reparented in lowerings, this could
-            // be a class instead of the actual function that the class is nested inside
-            // in the source.
-            val containingDeclaration = irClass.symbol.owner.parent
-            if (containingDeclaration is IrFunction) {
-                val method = methodSignatureMapper.mapAsmMethod(containingDeclaration)
+            val enclosingFunction = context.customEnclosingFunction[irClass.attributeOwnerId] ?: irClass.parent as? IrFunction
+            if (enclosingFunction != null) {
+                val method = methodSignatureMapper.mapAsmMethod(enclosingFunction)
                 visitor.visitOuterClass(outerClassName, method.name, method.descriptor)
             } else if (irClass.isAnonymousObject) {
                 visitor.visitOuterClass(outerClassName, null, null)
