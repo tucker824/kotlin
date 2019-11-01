@@ -48,7 +48,10 @@ class FormattingCollector {
                     this
                 )
             )
-            is PsiComment -> JKComment(text)
+            is PsiComment -> {
+                val prevSibling = prevSibling as? PsiWhiteSpace
+                JKComment(if (prevSibling != null) "${prevSibling.text}$text" else text)
+            }
             else -> null
         } ?: return null
         commentCache[this] = token
