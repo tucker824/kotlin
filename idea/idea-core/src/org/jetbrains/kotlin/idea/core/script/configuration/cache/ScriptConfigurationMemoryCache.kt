@@ -17,34 +17,51 @@ class ScriptConfigurationMemoryCache(
         const val MAX_SCRIPTS_CACHED = 50
     }
 
-    private val memoryCache = SLRUMap<VirtualFile, ScriptConfigurationSnapshot>(MAX_SCRIPTS_CACHED, MAX_SCRIPTS_CACHED)
+    private val memoryCache = SLRUMap<VirtualFile, ScriptConfigurationState>(MAX_SCRIPTS_CACHED, MAX_SCRIPTS_CACHED)
 
     @Synchronized
-    override operator fun get(file: VirtualFile): ScriptConfigurationSnapshot? {
+    override operator fun get(file: VirtualFile): ScriptConfigurationState? {
         return memoryCache.get(file)
     }
 
-
     @Synchronized
-    override operator fun set(file: VirtualFile, configurationSnapshot: ScriptConfigurationSnapshot) {
-        memoryCache.put(
-            file,
-            configurationSnapshot
-        )
-    }
-
-    override fun markUpToDate(file: VirtualFile, inputs: CachedConfigurationInputs) {
+    override fun setApplied(file: VirtualFile, configurationSnapshot: ScriptConfigurationSnapshot) {
         val old = memoryCache[file]
         if (old != null) {
-            memoryCache.put(file, old.copy(inputs = inputs))
+            memoryCache.put(file, old.copy(applied = configurationSnapshot))
+        } else {
+            memoryCache.put(file, ScriptConfigurationState(configurationSnapshot))
+        }
+    }
+
+    @Synchronized
+    override fun setLoaded(file: VirtualFile, configurationSnapshot: ScriptConfigurationSnapshot) {
+        val old = memoryCache[file]
+        if (old != null) {
+            memoryCache.put(file, old.copy(applied = configurationSnapshot))
+        } else {
+            memoryCache.put(file, ScriptConfigurationState(configurationSnapshot, configurationSnapshot))
+        }
+    }
+
+    @Synchronized
+    override fun markOutOfDate(file: VirtualFile) {
+        val old = memoryCache[file]
+        if (old != null) {
+            memoryCache.put(
+                file, old.copy(
+                    applied = old.applied.copy(inputs = CachedConfigurationInputs.OutOfDate),
+                    loaded = old.loaded?.copy(inputs = CachedConfigurationInputs.OutOfDate)
+                )
+            )
         }
     }
 
     @Synchronized
     @Suppress("UNCHECKED_CAST")
-    override fun all() =
+    override fun allApplied() =
         memoryCache.entrySet().map {
-            if (it.value.configuration == null) null
-            else it.key to it.value.configuration
+            if (it.value.applied.configuration == null) null
+            else it.key to it.value.applied.configuration
         } as Collection<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>>
 }
