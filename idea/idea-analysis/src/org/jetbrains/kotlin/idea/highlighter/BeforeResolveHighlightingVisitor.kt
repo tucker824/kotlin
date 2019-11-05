@@ -50,7 +50,6 @@ internal class BeforeResolveHighlightingVisitor(holder: AnnotationHolder) : High
             elementType == KtTokens.EXCLEXCL -> KotlinHighlightingColors.EXCLEXCL
             else -> return
         }
-
         createInfoAnnotation(element, null).textAttributes = attributes
     }
 
