@@ -21,14 +21,21 @@ enum class LockNames(val debugName: String, val lockFactory: (Int, String, Any) 
 
 private object LockHelper {
     @JvmStatic
-    private val locks: Array<Any> = LockNames.values().map { Object() }.toTypedArray()
+    private val lockNamesArray = LockNames.values()
+
+    @JvmStatic
+    private val locks: Array<Any> = lockNamesArray.map { Object() }.toTypedArray()
 
     @JvmStatic
     private fun lock(lockOrder: Int): Any {
+        lockOrderCheck(lockOrder)
+        return locks[lockOrder - 1]
+    }
+
+    private fun lockOrderCheck(lockOrder: Int) {
         check(lockOrder >= 1 && lockOrder <= LockNames.SpecialInfo.lockOrder) {
             "lockOrder $lockOrder has to be in range of 1..${LockNames.SpecialInfo.lockOrder}"
         }
-        return locks[lockOrder - 1]
     }
 
     // overloaded method for the sake of java interop
@@ -42,11 +49,8 @@ private object LockHelper {
     @JvmStatic
     fun resolveLock(lockOrder: Int?, name: String, sourceLockBlock: LockBlock?): LockBlock =
         lockOrder?.let { order ->
-            LockNames.values().find { it.lockOrder == order }?.lockFactory?.invoke(
-                order,
-                name,
-                sourceLockBlock?.lock ?: lock(lockOrder)
-            )
+            lockOrderCheck(order)
+            lockNamesArray[order - 1].lockFactory?.invoke(order, name, sourceLockBlock?.lock ?: lock(lockOrder))
         }
             ?: SimpleLock(sourceLockBlock?.lock ?: Object())
 
