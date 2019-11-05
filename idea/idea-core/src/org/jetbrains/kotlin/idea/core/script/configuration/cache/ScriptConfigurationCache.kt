@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.idea.core.script.configuration.cache
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlin.idea.core.script.configuration.utils.getPsiModificationStamp
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import kotlin.script.experimental.api.ScriptDiagnostic
@@ -54,6 +55,6 @@ interface CachedConfigurationInputs {
 
     data class PsiModificationStamp(val modificationStamp: Long) : CachedConfigurationInputs {
         override fun isUpToDate(project: Project, file: VirtualFile, ktFile: KtFile?): Boolean =
-            ktFile?.modificationStamp == modificationStamp
+            getPsiModificationStamp(project, file, ktFile) == modificationStamp
     }
 }

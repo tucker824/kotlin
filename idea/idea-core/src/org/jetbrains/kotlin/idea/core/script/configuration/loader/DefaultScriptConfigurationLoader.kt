@@ -10,6 +10,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.CachedConfigurationInputs
 import org.jetbrains.kotlin.idea.core.script.configuration.cache.ScriptConfigurationSnapshot
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.getKtFile
+import org.jetbrains.kotlin.idea.core.script.configuration.utils.getPsiModificationStamp
+import org.jetbrains.kotlin.idea.core.script.configuration.utils.psiModificationStampHook
 import org.jetbrains.kotlin.idea.core.script.debug
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.KotlinScriptDefinition
@@ -40,7 +42,7 @@ open class DefaultScriptConfigurationLoader(val project: Project) : ScriptConfig
 
         debug(file) { "start dependencies loading" }
 
-        val inputs = getInputsStamp(file)
+        val inputs = getInputsStamp(virtualFile, file)
         val scriptingApiResult = try {
             refineScriptCompilationConfiguration(
                 KtFileScriptSource(file), scriptDefinition, file.project
@@ -62,6 +64,8 @@ open class DefaultScriptConfigurationLoader(val project: Project) : ScriptConfig
         return true
     }
 
-    protected open fun getInputsStamp(file: KtFile): CachedConfigurationInputs =
-        CachedConfigurationInputs.PsiModificationStamp(file.modificationStamp)
+    protected open fun getInputsStamp(virtualFile: VirtualFile, file: KtFile): CachedConfigurationInputs {
+        val modificationStamp = getPsiModificationStamp(project, virtualFile, file)!!
+        return CachedConfigurationInputs.PsiModificationStamp(modificationStamp)
+    }
 }
