@@ -26,42 +26,32 @@ class ScriptConfigurationMemoryCache(
 
     @Synchronized
     override fun setApplied(file: VirtualFile, configurationSnapshot: ScriptConfigurationSnapshot) {
-        val old = memoryCache[file]
-        if (old != null) {
-            memoryCache.put(file, old.copy(applied = configurationSnapshot))
-        } else {
-            memoryCache.put(file, ScriptConfigurationState(configurationSnapshot))
-        }
+        val old = memoryCache[file] ?: ScriptConfigurationState()
+        memoryCache.put(file, old.copy(applied = configurationSnapshot))
     }
 
     @Synchronized
     override fun setLoaded(file: VirtualFile, configurationSnapshot: ScriptConfigurationSnapshot) {
-        val old = memoryCache[file]
-        if (old != null) {
-            memoryCache.put(file, old.copy(applied = configurationSnapshot))
-        } else {
-            memoryCache.put(file, ScriptConfigurationState(configurationSnapshot, configurationSnapshot))
-        }
+        val old = memoryCache[file] ?: ScriptConfigurationState()
+        memoryCache.put(file, old.copy(loaded = configurationSnapshot))
     }
 
     @Synchronized
     override fun markOutOfDate(file: VirtualFile) {
-        val old = memoryCache[file]
-        if (old != null) {
-            memoryCache.put(
-                file, old.copy(
-                    applied = old.applied.copy(inputs = CachedConfigurationInputs.OutOfDate),
-                    loaded = old.loaded?.copy(inputs = CachedConfigurationInputs.OutOfDate)
-                )
+        val old = memoryCache[file] ?: ScriptConfigurationState()
+        memoryCache.put(
+            file, old.copy(
+                applied = old.applied?.copy(inputs = CachedConfigurationInputs.OutOfDate),
+                loaded = old.loaded?.copy(inputs = CachedConfigurationInputs.OutOfDate)
             )
-        }
+        )
     }
 
     @Synchronized
     @Suppress("UNCHECKED_CAST")
     override fun allApplied() =
         memoryCache.entrySet().map {
-            if (it.value.applied.configuration == null) null
-            else it.key to it.value.applied.configuration
+            if (it.value.applied?.configuration == null) null
+            else it.key to it.value.applied?.configuration
         } as Collection<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>>
 }
