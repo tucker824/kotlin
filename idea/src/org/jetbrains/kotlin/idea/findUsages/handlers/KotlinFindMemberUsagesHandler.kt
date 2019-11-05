@@ -21,6 +21,9 @@ import com.intellij.find.FindManager
 import com.intellij.find.findUsages.AbstractFindUsagesDialog
 import com.intellij.find.findUsages.FindUsagesOptions
 import com.intellij.find.impl.FindManagerImpl
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationListener
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
@@ -47,11 +50,13 @@ import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOpt
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchParameters
 import org.jetbrains.kotlin.idea.search.isOnlyKotlinSearch
 import org.jetbrains.kotlin.idea.search.usagesSearch.dataClassComponentFunction
+import org.jetbrains.kotlin.idea.search.usagesSearch.filterDataClassComponentsIfDisabled
 import org.jetbrains.kotlin.idea.search.usagesSearch.isImportUsage
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.findOriginalTopMostOverriddenDescriptors
 import org.jetbrains.kotlin.resolve.source.getPsi
+import kotlin.concurrent.timerTask
 
 abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected constructor(
     declaration: T,
@@ -98,11 +103,39 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
         }
     }
 
+    protected open val onTaskEnded: (() -> Unit)? = null
+
     private class Property(
-        declaration: KtNamedDeclaration,
+        private val propertyDeclaration: KtNamedDeclaration,
         elementsToSearch: Collection<PsiElement>,
         factory: KotlinFindUsagesHandlerFactory
-    ) : KotlinFindMemberUsagesHandler<KtNamedDeclaration>(declaration, elementsToSearch, factory) {
+    ) : KotlinFindMemberUsagesHandler<KtNamedDeclaration>(propertyDeclaration, elementsToSearch, factory) {
+
+        override val onTaskEnded = run {
+            val timeout = System.currentTimeMillis() + 2000
+            var showed = false
+            {
+                if (!showed && System.currentTimeMillis() > timeout) {
+                    showed = true
+                    val listener = NotificationListener { notification, _ ->
+                        notification.expire()
+                        //action.invoke()
+                    }
+                    val notification = Notification(
+                        "",
+                        "Find usages can be faster in not precise mode",
+                        "Find usages for data class components could be switched to fast mode." +
+                                "This mode not searching for destruction declarations and components that could significally increase the search speed.",
+                        NotificationType.INFORMATION,
+                        listener
+                    )
+                    notification.notify(project)
+                }
+            }
+            //notification.isExpired
+            //notification.whenExpired { UpdateChecker.ourShownNotifications.remove(notificationType, notification) }
+            //notification.notify(project)
+        }
 
         override fun getFindUsagesOptions(dataContext: DataContext?): FindUsagesOptions = factory.findPropertyOptions
 
@@ -145,13 +178,24 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
             return result
         }
 
+        val isDataClassComponent: Boolean
+            get() = propertyDeclaration.parent is KtParameterList &&
+                    propertyDeclaration.parent.parent is KtPrimaryConstructor &&
+                    propertyDeclaration.parent.parent.parent.let { it is KtClass && it.isData() }
+
         override fun createKotlinReferencesSearchOptions(options: FindUsagesOptions): KotlinReferencesSearchOptions {
+
+            //isDataClassComponent
+
+
             val kotlinOptions = options as KotlinPropertyFindUsagesOptions
             return KotlinReferencesSearchOptions(
                 acceptCallableOverrides = true,
                 acceptOverloads = false,
                 acceptExtensionsOfDeclarationClass = false,
-                searchForExpectedUsages = kotlinOptions.searchExpected
+                searchForExpectedUsages = kotlinOptions.searchExpected,
+                searchForOperatorConventions = false,
+                searchForComponentConventions = false
             )
         }
     }
@@ -164,6 +208,12 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
         element: PsiElement, processor: Processor<UsageInfo>, options: FindUsagesOptions
     ) : Searcher(element, processor, options) {
 
+        private inline fun addTaskWithNotifierCheck(crossinline body: () -> Boolean) {
+            addTask {
+                body().also { onTaskEnded?.invoke() }
+            }
+        }
+
         private val kotlinOptions = options as KotlinCallableFindUsagesOptions
 
         override fun buildTaskList(): Boolean {
@@ -174,7 +224,13 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
                 val kotlinSearchOptions = createKotlinReferencesSearchOptions(options)
                 val searchParameters = KotlinReferencesSearchParameters(element, options.searchScope, kotlinOptions = kotlinSearchOptions)
 
-                addTask { applyQueryFilters(element, options, ReferencesSearch.search(searchParameters)).forEach(referenceProcessor) }
+                addTaskWithNotifierCheck {
+                    applyQueryFilters(element, options, ReferencesSearch.search(searchParameters)).forEach(referenceProcessor)
+                }
+
+                addTaskWithNotifierCheck {
+                    applyQueryFilters(element, options, ReferencesSearch.search(searchParameters)).forEach(referenceProcessor)
+                }
 
                 if (element is KtElement && !isOnlyKotlinSearch(options.searchScope)) {
                     // TODO: very bad code!! ReferencesSearch does not work correctly for constructors and annotation parameters
@@ -184,8 +240,8 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
                         else -> options.searchScope
                     }
 
-                    for (psiMethod in element.toLightMethods()) {
-                        addTask {
+                    for (psiMethod in element.toLightMethods().filterDataClassComponentsIfDisabled(kotlinSearchOptions)) {
+                        addTaskWithNotifierCheck {
                             applyQueryFilters(
                                 element,
                                 options,
@@ -197,7 +253,7 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
             }
 
             if (kotlinOptions.searchOverrides) {
-                addTask {
+                addTaskWithNotifierCheck {
                     val overriders = HierarchySearchRequest(element, options.searchScope, true).searchOverriders()
                     overriders.all {
                         val element = runReadAction { it.takeIf { it.isValid }?.navigationElement } ?: return@all true
