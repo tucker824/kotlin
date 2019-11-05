@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigur
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptConfigurationLoadingContext
 import org.jetbrains.kotlin.idea.core.script.configuration.loader.ScriptOutsiderFileConfigurationLoader
 import org.jetbrains.kotlin.idea.core.script.configuration.utils.BackgroundExecutor
+import org.jetbrains.kotlin.idea.core.script.configuration.utils.testScriptConfigurationNotification
 import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
 import org.jetbrains.kotlin.idea.core.util.EDT
 import org.jetbrains.kotlin.psi.KtFile
@@ -235,7 +236,7 @@ internal class DefaultScriptConfigurationManager(project: Project) :
                     val autoReload = skipNotification
                             || oldConfiguration == null
                             || KotlinScriptingSettings.getInstance(project).isAutoReloadEnabled
-                            || ApplicationManager.getApplication().isUnitTestMode
+                            || (ApplicationManager.getApplication().isUnitTestMode && !testScriptConfigurationNotification)
 
                     if (autoReload) {
                         if (oldConfiguration != null) {

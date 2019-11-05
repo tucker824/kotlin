@@ -65,6 +65,12 @@ internal class BackgroundExecutor(
 
     @Synchronized
     fun ensureScheduled(key: VirtualFile, actions: () -> Unit) {
+        if (backgroundExecutorNewTaskHook != null) {
+            rootsIndexerTransaction = rootsManager::transaction
+            backgroundExecutorNewTaskHook!!(key, actions)
+            return
+        }
+
         val task = LoadTask(key, actions)
 
         if (queue.add(task)) {

@@ -32,11 +32,11 @@ interface ScriptConfigurationCache {
 }
 
 data class ScriptConfigurationState(
-    val applied: ScriptConfigurationSnapshot,
+    val applied: ScriptConfigurationSnapshot? = null,
     val loaded: ScriptConfigurationSnapshot? = null
 ) {
     fun isUpToDate(project: Project, file: VirtualFile, ktFile: KtFile? = null): Boolean =
-        (loaded ?: applied).inputs.isUpToDate(project, file, ktFile)
+        (loaded ?: applied)?.inputs?.isUpToDate(project, file, ktFile) ?: false
 }
 
 data class ScriptConfigurationSnapshot(
