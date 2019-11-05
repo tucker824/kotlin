@@ -90,7 +90,6 @@ class ResolvedAtomCompleter(
         val lastCall = if (resolvedCall is VariableAsFunctionResolvedCall) resolvedCall.functionCall else resolvedCall
         if (ErrorUtils.isError(resolvedCall.candidateDescriptor)) {
             kotlinToResolvedCallTransformer.runArgumentsChecks(topLevelCallContext, topLevelTrace, lastCall as NewResolvedCallImpl<*>)
-            checkMissingReceiverSupertypes(resolvedCall, moduleDescriptor, topLevelTrace)
             return resolvedCall
         }
 
