@@ -8,19 +8,29 @@ package org.jetbrains.kotlin.storage
 import java.lang.UnsupportedOperationException
 import java.util.*
 
-enum class LockNames(val lockOrder: Int, val debugName: String, val lockFactory: (Int, String, LockBlock?) -> LockBlock) {
-    SDK(2, "sdk", { order, name, lockBlock -> SdkLock(order, name, lockBlock) }),
-    Libraries(3, "project libraries", { order, name, lockBlock -> LibrariesLock(order, name, lockBlock) }),
-    NotUnderContentRootModuleInfo(
-        4,
-        "LibrarySourceInfo or NotUnderContentRootModuleInfo",
-        { order, name, lockBlock -> ModulesLock(order, name, lockBlock) }),
-    Modules(5, "project source roots and libraries", { order, name, lockBlock -> ModulesLock(order, name, lockBlock) }),
-    ScriptDependencies(6, "dependencies of scripts", { order, name, lockBlock -> ScriptDependenciesLock(order, name, lockBlock) }),
-    SpecialInfo(7, "completion/highlighting in ", { order, name, lockBlock -> SpecialInfoLock(order, name, lockBlock) })
+enum class LockNames(val debugName: String, val lockFactory: (Int, String, Any) -> LockBlock) {
+    SDK("sdk", { order, name, lock -> SdkLock(order, name, lock) }),
+    Libraries("project libraries", { order, name, lock -> LibrariesLock(order, name, lock) }),
+    NotUnderContentRootModuleInfo("NotUnderContentRootModuleInfo", { order, name, lock -> ModulesLock(order, name, lock) }),
+    Modules("project source roots and libraries", { order, name, lock -> ModulesLock(order, name, lock) }),
+    ScriptDependencies("dependencies of scripts", { order, name, lock -> ScriptDependenciesLock(order, name, lock) }),
+    SpecialInfo("completion/highlighting in ", { order, name, lock -> SpecialInfoLock(order, name, lock) });
+
+    val lockOrder: Int = ordinal + 1
 }
 
 private object LockHelper {
+    @JvmStatic
+    private val locks: Array<Any> = LockNames.values().map { Object() }.toTypedArray()
+
+    @JvmStatic
+    private fun lock(lockOrder: Int): Any {
+        check(lockOrder >= 1 && lockOrder <= LockNames.SpecialInfo.lockOrder) {
+            "lockOrder $lockOrder has to be in range of 1..${LockNames.SpecialInfo.lockOrder}"
+        }
+        return locks[lockOrder - 1]
+    }
+
     // overloaded method for the sake of java interop
     @JvmStatic
     fun resolveLock(name: String): LockBlock = resolveLock(null, name)
@@ -31,8 +41,16 @@ private object LockHelper {
 
     @JvmStatic
     fun resolveLock(lockOrder: Int?, name: String, sourceLockBlock: LockBlock?): LockBlock =
-        lockOrder?.let { order -> LockNames.values().find { it.lockOrder == order }?.lockFactory?.invoke(order, name, sourceLockBlock) }
+        lockOrder?.let { order ->
+            LockNames.values().find { it.lockOrder == order }?.lockFactory?.invoke(
+                order,
+                name,
+                sourceLockBlock?.lock ?: lock(lockOrder)
+            )
+        }
             ?: SimpleLock(sourceLockBlock?.lock ?: Object())
+
+
 }
 
 interface LockBlock {
@@ -119,26 +137,23 @@ abstract class TrackLock(val order: Int, val name: String, override val lock: An
 /**
  * The reason behind all those SdkLock, LibrariesLock etc is to keep <b>named trace</b> in thread dumps / stack traces
  */
-private class RuntimeModuleLock(order: Int, name: String, lockBlock: LockBlock?) : TrackLock(order, name, lockBlock?.lock ?: Object()) {
+
+private class SdkLock(order: Int, name: String, lock: Any) : TrackLock(order, name, lock) {
     override fun <T> guarded(computable: () -> T?): T? = checkAndExecute(computable)
 }
 
-private class SdkLock(order: Int, name: String, lockBlock: LockBlock?) : TrackLock(order, name, lockBlock?.lock ?: Object()) {
+private class LibrariesLock(order: Int, name: String, lock: Any) : TrackLock(order, name, lock) {
     override fun <T> guarded(computable: () -> T?): T? = checkAndExecute(computable)
 }
 
-private class LibrariesLock(order: Int, name: String, lockBlock: LockBlock?) : TrackLock(order, name, lockBlock?.lock ?: Object()) {
+private class ModulesLock(order: Int, name: String, lock: Any) : TrackLock(order, name, lock) {
     override fun <T> guarded(computable: () -> T?): T? = checkAndExecute(computable)
 }
 
-private class ModulesLock(order: Int, name: String, lockBlock: LockBlock?) : TrackLock(order, name, lockBlock?.lock ?: Object()) {
+private class ScriptDependenciesLock(order: Int, name: String, lock: Any) : TrackLock(order, name, lock) {
     override fun <T> guarded(computable: () -> T?): T? = checkAndExecute(computable)
 }
 
-private class ScriptDependenciesLock(order: Int, name: String, lockBlock: LockBlock?) : TrackLock(order, name, lockBlock?.lock ?: Object()) {
-    override fun <T> guarded(computable: () -> T?): T? = checkAndExecute(computable)
-}
-
-private class SpecialInfoLock(order: Int, name: String, lockBlock: LockBlock?) : TrackLock(order, name, lockBlock?.lock ?: Object()) {
+private class SpecialInfoLock(order: Int, name: String, lock: Any) : TrackLock(order, name, lock) {
     override fun <T> guarded(computable: () -> T?): T? = checkAndExecute(computable)
 }
