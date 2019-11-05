@@ -16,7 +16,7 @@ enum class LockNames(val debugName: String, val lockFactory: (Int, String, Any) 
     ScriptDependencies("dependencies of scripts", { order, name, lock -> ScriptDependenciesLock(order, name, lock) }),
     SpecialInfo("completion/highlighting in ", { order, name, lock -> SpecialInfoLock(order, name, lock) });
 
-    val lockOrder: Int = ordinal + 1
+    val lockOrder: Int = ordinal
 }
 
 private object LockHelper {
@@ -29,12 +29,12 @@ private object LockHelper {
     @JvmStatic
     private fun lock(lockOrder: Int): Any {
         lockOrderCheck(lockOrder)
-        return locks[lockOrder - 1]
+        return locks[lockOrder]
     }
 
     private fun lockOrderCheck(lockOrder: Int) {
-        check(lockOrder >= 1 && lockOrder <= LockNames.SpecialInfo.lockOrder) {
-            "lockOrder $lockOrder has to be in range of 1..${LockNames.SpecialInfo.lockOrder}"
+        check(lockOrder in lockNamesArray.indices) {
+            "lockOrder $lockOrder has to be in range of ${lockNamesArray.indices}"
         }
     }
 
@@ -50,7 +50,7 @@ private object LockHelper {
     fun resolveLock(lockOrder: Int?, name: String, sourceLockBlock: LockBlock?): LockBlock =
         lockOrder?.let { order ->
             lockOrderCheck(order)
-            lockNamesArray[order - 1].lockFactory?.invoke(order, name, sourceLockBlock?.lock ?: lock(lockOrder))
+            lockNamesArray[order].lockFactory?.invoke(order, name, sourceLockBlock?.lock ?: lock(lockOrder))
         }
             ?: SimpleLock(sourceLockBlock?.lock ?: Object())
 
@@ -127,7 +127,7 @@ abstract class TrackLock(val order: Int, val name: String, override val lock: An
     }
 
     override fun toString(): String {
-        return "'$name'/$order@$lock${if (ownerName != null) "[Owner:$ownerName]" else ""}"
+        return "${javaClass.simpleName} '$name'/$order@$lock${if (ownerName != null) "[Owner:$ownerName]" else ""}"
     }
 
     companion object {
