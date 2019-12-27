@@ -27196,6 +27196,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             runTest("compiler/testData/codegen/box/vararg/doNotCopyImmediatelyCreatedArrays.kt");
         }
 
+        @TestMetadata("emptyVarargOfBoxedPrimitiveType.kt")
+        public void testEmptyVarargOfBoxedPrimitiveType() throws Exception {
+            runTest("compiler/testData/codegen/box/vararg/emptyVarargOfBoxedPrimitiveType.kt");
+        }
+
         @TestMetadata("kt1978.kt")
         public void testKt1978() throws Exception {
             runTest("compiler/testData/codegen/box/vararg/kt1978.kt");
