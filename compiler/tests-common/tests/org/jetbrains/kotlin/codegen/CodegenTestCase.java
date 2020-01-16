@@ -511,6 +511,7 @@ public abstract class CodegenTestCase extends KtUsefulTestCase {
 
             if (verifyWithDex() && DxChecker.RUN_DX_CHECKER) {
                 DxChecker.check(classFileFactory);
+                D8Checker.check(classFileFactory);
             }
         }
         catch (TestsCompiletimeError e) {
