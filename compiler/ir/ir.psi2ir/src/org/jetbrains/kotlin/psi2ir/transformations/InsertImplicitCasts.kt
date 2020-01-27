@@ -36,7 +36,7 @@ import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.util.TypeTranslator
-import org.jetbrains.kotlin.ir.util.coerceToUnitIfNeeded
+import org.jetbrains.kotlin.ir.util.coerceToUnit
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.psi2ir.containsNull
@@ -142,7 +142,7 @@ internal class InsertImplicitCasts(
         body.transformPostfix {
             statements.forEachIndexed { i, irStatement ->
                 if (irStatement is IrExpression) {
-                    body.statements[i] = irStatement.coerceToUnit()
+                    body.statements[i] = irStatement.coerceToUnit(irBuiltIns)
                 }
             }
         }
@@ -158,7 +158,7 @@ internal class InsertImplicitCasts(
                         if (i == lastIndex)
                             irStatement.cast(type)
                         else
-                            irStatement.coerceToUnit()
+                            irStatement.coerceToUnit(irBuiltIns)
                 }
             }
         }
@@ -166,7 +166,7 @@ internal class InsertImplicitCasts(
     override fun visitReturn(expression: IrReturn): IrExpression =
         expression.transformPostfix {
             value = if (expression.returnTargetSymbol is IrConstructorSymbol) {
-                value.coerceToUnit()
+                value.coerceToUnit(irBuiltIns)
             } else {
                 returnExpressionsToBePostprocessed.add(expression)
                 value.cast(expression.returnTarget.returnType)
@@ -224,7 +224,7 @@ internal class InsertImplicitCasts(
     override fun visitLoop(loop: IrLoop): IrExpression =
         loop.transformPostfix {
             condition = condition.cast(builtIns.booleanType)
-            body = body?.coerceToUnit()
+            body = body?.coerceToUnit(irBuiltIns)
         }
 
     override fun visitThrow(expression: IrThrow): IrExpression =
@@ -240,7 +240,7 @@ internal class InsertImplicitCasts(
                 aCatch.result = aCatch.result.cast(type)
             }
 
-            finallyExpression = finallyExpression?.coerceToUnit()
+            finallyExpression = finallyExpression?.coerceToUnit(irBuiltIns)
         }
 
     private fun KotlinType.getSubstitutedFunctionTypeForSamType() =
@@ -311,7 +311,7 @@ internal class InsertImplicitCasts(
 
         return when {
             expectedType.isUnit() ->
-                coerceToUnit()
+                coerceToUnit(irBuiltIns)
 
             valueType.isDynamic() && !expectedType.isDynamic() ->
                 if (expectedType.isNullableAny())
@@ -359,14 +359,6 @@ internal class InsertImplicitCasts(
             this
         )
     }
-
-    private fun IrExpression.coerceToUnit(): IrExpression {
-        val valueType = getKotlinType(this)
-        return coerceToUnitIfNeeded(valueType, irBuiltIns)
-    }
-
-    private fun getKotlinType(irExpression: IrExpression) =
-        irExpression.type.originalKotlinType!!
 
     private fun KotlinType.isBuiltInIntegerType(): Boolean =
         KotlinBuiltIns.isByte(this) ||
