@@ -4065,6 +4065,11 @@ public class IrBlackBoxInlineCodegenTestGenerated extends AbstractIrBlackBoxInli
                 runTest("compiler/testData/codegen/boxInline/syntheticAccessors/withinInlineLambda/privateInCrossInline.kt");
             }
 
+            @TestMetadata("protectedMembersFromSuper.kt")
+            public void testProtectedMembersFromSuper() throws Exception {
+                runTest("compiler/testData/codegen/boxInline/syntheticAccessors/withinInlineLambda/protectedMembersFromSuper.kt");
+            }
+
             @TestMetadata("superCall.kt")
             public void testSuperCall() throws Exception {
                 runTest("compiler/testData/codegen/boxInline/syntheticAccessors/withinInlineLambda/superCall.kt");
