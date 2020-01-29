@@ -64,7 +64,7 @@ class JvmBackendContext(
     val typeMapper = IrTypeMapper(this)
     val methodSignatureMapper = MethodSignatureMapper(this)
 
-    override val declarationFactory: JvmDeclarationFactory = JvmDeclarationFactory(methodSignatureMapper)
+    override val declarationFactory: JvmDeclarationFactory = JvmDeclarationFactory(methodSignatureMapper, state.languageVersionSettings)
     override val sharedVariablesManager = JvmSharedVariablesManager(state.module, builtIns, irBuiltIns)
 
     override val ir = JvmIr(irModuleFragment, this.symbolTable)
