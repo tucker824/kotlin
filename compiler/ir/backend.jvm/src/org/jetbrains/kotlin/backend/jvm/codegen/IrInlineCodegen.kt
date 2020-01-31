@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.codegen.inline.*
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
@@ -157,11 +158,13 @@ class IrInlineCodegen(
         // TODO port inlining cycle detection to IrFunctionAccessExpression & pass it
         state.globalInlineContext.enterIntoInlining(null)
         try {
+            val syntheticCall = expression.startOffset == UNDEFINED_OFFSET
             performInline(
                 expression.symbol.owner.typeParameters.map { it.symbol },
                 function.origin == IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER,
                 false,
-                codegen.typeMapper.typeSystem
+                codegen.typeMapper.typeSystem,
+                syntheticCall
             )
         } finally {
             state.globalInlineContext.exitFromInliningOf(null)

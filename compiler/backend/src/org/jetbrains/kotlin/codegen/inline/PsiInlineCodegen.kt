@@ -65,7 +65,7 @@ class PsiInlineCodegen(
             return
         }
         try {
-            performInline(resolvedCall?.typeArguments?.keys?.toList(), callDefault, callDefault, codegen.typeSystem)
+            performInline(resolvedCall?.typeArguments?.keys?.toList(), callDefault, callDefault, codegen.typeSystem, false)
         } finally {
             state.globalInlineContext.exitFromInliningOf(resolvedCall)
         }
