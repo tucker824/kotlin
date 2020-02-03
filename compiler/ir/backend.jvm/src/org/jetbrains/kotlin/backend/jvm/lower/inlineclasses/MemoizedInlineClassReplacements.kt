@@ -126,12 +126,16 @@ class MemoizedInlineClassReplacements {
     }
 
     private fun createMethodReplacement(function: IrFunction): IrSimpleFunction =
-        buildReplacement(function) {
+        buildReplacement(function, function.origin) {
             require(function.dispatchReceiverParameter != null && function is IrSimpleFunction)
+<<<<<<< HEAD
             overriddenSymbols.addAll(function.overriddenSymbols.map {
                 getReplacementFunction(it.owner)?.symbol ?: it
             })
 
+=======
+            val newValueParameters = ArrayList<IrValueParameter>()
+>>>>>>> 12e31a17603... JVM IR: Use dispatchReceiver to calculate owner in MethodSignatureMapper
             for ((index, parameter) in function.explicitParameters.withIndex()) {
                 val name = if (parameter == function.extensionReceiverParameter) Name.identifier("\$receiver") else parameter.name
                 val newParameter: IrValueParameter
@@ -149,7 +153,7 @@ class MemoizedInlineClassReplacements {
         }
 
     private fun createStaticReplacement(function: IrFunction): IrSimpleFunction =
-        buildReplacement(function) {
+        buildReplacement(function, JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT) {
             val newValueParameters = ArrayList<IrValueParameter>()
             for ((index, parameter) in function.explicitParameters.withIndex()) {
                 val name = when (parameter) {
@@ -170,11 +174,13 @@ class MemoizedInlineClassReplacements {
             valueParameters.addAll(newValueParameters)
         }
 
-    private fun buildReplacement(function: IrFunction, body: IrFunctionImpl.() -> Unit) =
+    private fun buildReplacement(function: IrFunction, replacementOrigin: IrDeclarationOrigin, body: IrFunctionImpl.() -> Unit) =
         buildFunWithDescriptorForInlining(function.descriptor) {
             updateFrom(function)
-            if (function.origin == IrDeclarationOrigin.GENERATED_INLINE_CLASS_MEMBER) {
-                origin = JvmLoweredDeclarationOrigin.INLINE_CLASS_GENERATED_IMPL_METHOD
+            origin = if (function.origin == IrDeclarationOrigin.GENERATED_INLINE_CLASS_MEMBER) {
+                JvmLoweredDeclarationOrigin.INLINE_CLASS_GENERATED_IMPL_METHOD
+            } else {
+                replacementOrigin
             }
             name = mangledNameFor(function)
             returnType = function.returnType
@@ -182,9 +188,20 @@ class MemoizedInlineClassReplacements {
             parent = function.parent
             annotations += function.annotations
             copyTypeParameters(function.allTypeParameters)
-            correspondingPropertySymbol = function.safeAs<IrSimpleFunction>()?.correspondingPropertySymbol
             metadata = function.metadata
+<<<<<<< HEAD
             function.safeAs<IrFunctionBase>()?.metadata = null
+=======
+            function.safeAs<IrFunctionBase<*>>()?.metadata = null
+
+            if (function is IrSimpleFunction) {
+                correspondingPropertySymbol = function.correspondingPropertySymbol
+                overriddenSymbols = function.overriddenSymbols.map {
+                    getReplacementFunction(it.owner)?.symbol ?: it
+                }
+            }
+
+>>>>>>> 12e31a17603... JVM IR: Use dispatchReceiver to calculate owner in MethodSignatureMapper
             body()
         }
 }
