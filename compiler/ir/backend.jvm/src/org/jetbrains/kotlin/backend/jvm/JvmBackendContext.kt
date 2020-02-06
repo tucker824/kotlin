@@ -93,6 +93,7 @@ class JvmBackendContext(
 
     internal val multifileFacadesToAdd = mutableMapOf<JvmClassName, MutableList<IrClass>>()
     internal val multifileFacadeForPart = mutableMapOf<IrClass, JvmClassName>()
+    internal val multifileFacadeClassForPart = mutableMapOf<IrClass, IrClass>()
     internal val multifileFacadeMemberToPartMember = mutableMapOf<IrFunction, IrFunction>()
 
     internal val hiddenConstructors = mutableMapOf<IrConstructor, IrConstructorImpl>()
