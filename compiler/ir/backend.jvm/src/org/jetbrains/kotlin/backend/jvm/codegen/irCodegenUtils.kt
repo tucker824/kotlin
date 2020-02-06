@@ -367,12 +367,15 @@ internal fun getSignature(
    For other cases use getVisibilityAccessFlag(MemberDescriptor descriptor)
    Classes in byte code should be public or package private
 */
-fun IrClass.getVisibilityAccessFlagForClass(): Int {
+fun IrClass.getVisibilityAccessFlagForClass(context: JvmBackendContext): Int {
     /* Original had a check for SyntheticClassDescriptorForJava, never invoked in th IR backend. */
     if (isOptionalAnnotationClass()) {
         return AsmUtil.NO_FLAG_PACKAGE_PRIVATE
     }
     if (kind == ClassKind.ENUM_ENTRY) {
+        return AsmUtil.NO_FLAG_PACKAGE_PRIVATE
+    }
+    if (this in context.multifileFacadeForPart) {
         return AsmUtil.NO_FLAG_PACKAGE_PRIVATE
     }
     return if (visibility === Visibilities.PUBLIC ||

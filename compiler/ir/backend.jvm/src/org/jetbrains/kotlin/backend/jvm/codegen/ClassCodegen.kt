@@ -445,15 +445,18 @@ open class ClassCodegen protected constructor(
         }
         return sourceMapper!!
     }
-}
 
-private val IrClass.flags: Int
-    get() = origin.flags or getVisibilityAccessFlagForClass() or deprecationFlags or when {
-        isAnnotationClass -> Opcodes.ACC_ANNOTATION or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT
-        isInterface -> Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT
-        isEnumClass -> Opcodes.ACC_ENUM or Opcodes.ACC_SUPER or modality.flags
-        else -> Opcodes.ACC_SUPER or modality.flags
-    }
+    private val IrClass.flags: Int
+        get() = origin.flags or facadeFlags or getVisibilityAccessFlagForClass(context) or deprecationFlags or when {
+            isAnnotationClass -> Opcodes.ACC_ANNOTATION or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT
+            isInterface -> Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT
+            isEnumClass -> Opcodes.ACC_ENUM or Opcodes.ACC_SUPER or modality.flags
+            else -> Opcodes.ACC_SUPER or modality.flags
+        }
+
+    private val IrClass.facadeFlags: Int
+        get() = if (this in context.multifileFacadeForPart) Opcodes.ACC_SYNTHETIC else 0
+}
 
 private val IrField.flags: Int
     get() = origin.flags or visibility.flags or (correspondingPropertySymbol?.owner?.deprecationFlags ?: 0) or
