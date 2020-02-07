@@ -253,7 +253,7 @@ open class ClassCodegen protected constructor(
                 val entry = irClass.fileParent.fileEntry
                 if (entry is MultifileFacadeFileEntry) {
                     val partInternalNames = entry.partFiles.mapNotNull { partFile ->
-                        val fileClass = partFile.declarations.singleOrNull { it.origin == IrDeclarationOrigin.FILE_CLASS } as IrClass?
+                        val fileClass = partFile.declarations.singleOrNull { it.isFileClass } as IrClass?
                         if (fileClass != null) typeMapper.mapClass(fileClass).internalName else null
                     }
                     MultifileClassCodegenImpl.writeMetadata(

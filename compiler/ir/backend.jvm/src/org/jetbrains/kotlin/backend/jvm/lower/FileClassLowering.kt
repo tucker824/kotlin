@@ -77,11 +77,11 @@ private class FileClassLowering(val context: JvmBackendContext) : FileLoweringPa
         val descriptor = WrappedClassDescriptor(sourceElement = KotlinSourceElement(ktFile))
         return IrClassImpl(
             0, fileEntry.maxOffset,
-            IrDeclarationOrigin.FILE_CLASS,
+            if (!fileClassInfo.withJvmMultifileClass) IrDeclarationOrigin.FILE_CLASS else IrDeclarationOrigin.MULTIFILE_PART_CLASS,
             symbol = IrClassSymbolImpl(descriptor),
             name = fileClassInfo.fileClassFqName.shortName(),
             kind = ClassKind.CLASS,
-            visibility = Visibilities.PUBLIC,
+            visibility = if (!fileClassInfo.withJvmMultifileClass) Visibilities.PUBLIC else Visibilities.PRIVATE,
             modality = Modality.FINAL,
             isCompanion = false,
             isInner = false,
