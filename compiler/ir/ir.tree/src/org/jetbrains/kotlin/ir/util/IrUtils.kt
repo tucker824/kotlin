@@ -625,4 +625,4 @@ val IrFunctionAccessExpression.typeSubstitutionMap: Map<IrTypeParameterSymbol, I
     get() = getTypeSubstitutionMap(symbol.owner)
 
 val IrDeclaration.isFileClass: Boolean
-    get() = origin == IrDeclarationOrigin.FILE_CLASS || origin == IrDeclarationOrigin.MULTIFILE_PART_CLASS
+    get() = origin == IrDeclarationOrigin.FILE_CLASS || origin == IrDeclarationOrigin.SYNTHETIC_FILE_CLASS

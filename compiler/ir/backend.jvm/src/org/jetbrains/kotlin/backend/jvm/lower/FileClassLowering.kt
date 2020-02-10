@@ -21,15 +21,20 @@ import org.jetbrains.kotlin.backend.common.ir.createImplicitParameterDeclaration
 import org.jetbrains.kotlin.backend.common.phaser.makeIrModulePhase
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.codegen.AsmUtil
+import org.jetbrains.kotlin.config.JvmAnalysisFlags
+import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fileClasses.JvmFileClassUtil
+import org.jetbrains.kotlin.fileClasses.JvmSimpleFileClassInfo
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrClassImpl
 import org.jetbrains.kotlin.ir.descriptors.WrappedClassDescriptor
 import org.jetbrains.kotlin.ir.symbols.impl.IrClassSymbolImpl
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.load.java.JavaVisibilities
+import org.jetbrains.kotlin.load.kotlin.PackagePartClassUtils
 import org.jetbrains.kotlin.psi2ir.PsiSourceManager
 import org.jetbrains.kotlin.resolve.jvm.JvmClassName
 import org.jetbrains.kotlin.resolve.source.KotlinSourceElement
@@ -77,11 +82,12 @@ private class FileClassLowering(val context: JvmBackendContext) : FileLoweringPa
         val descriptor = WrappedClassDescriptor(sourceElement = KotlinSourceElement(ktFile))
         return IrClassImpl(
             0, fileEntry.maxOffset,
-            if (!fileClassInfo.withJvmMultifileClass) IrDeclarationOrigin.FILE_CLASS else IrDeclarationOrigin.MULTIFILE_PART_CLASS,
+            if (!fileClassInfo.withJvmMultifileClass || context.state.languageVersionSettings.getFlag(JvmAnalysisFlags.inheritMultifileParts))
+                IrDeclarationOrigin.FILE_CLASS else IrDeclarationOrigin.SYNTHETIC_FILE_CLASS,
             symbol = IrClassSymbolImpl(descriptor),
             name = fileClassInfo.fileClassFqName.shortName(),
             kind = ClassKind.CLASS,
-            visibility = if (!fileClassInfo.withJvmMultifileClass) Visibilities.PUBLIC else Visibilities.PRIVATE,
+            visibility = if (!fileClassInfo.withJvmMultifileClass) Visibilities.PUBLIC else JavaVisibilities.PACKAGE_VISIBILITY,
             modality = Modality.FINAL,
             isCompanion = false,
             isInner = false,
