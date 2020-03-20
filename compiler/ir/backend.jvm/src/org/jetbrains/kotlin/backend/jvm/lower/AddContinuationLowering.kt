@@ -222,13 +222,8 @@ private class AddContinuationLowering(private val context: JvmBackendContext) : 
             Modality.FINAL,
             origin = JvmLoweredDeclarationOrigin.FOR_INLINE_STATE_MACHINE_TEMPLATE
         ).apply {
-<<<<<<< HEAD
             invokeSuspend.valueParameters.mapTo(valueParameters) { it.copyTo(this) }
-        }.also { it.copySuspendLambdaBodyFrom(irFunction, receiverField, fields) }
-=======
-            valueParameters += invokeSuspend.valueParameters.map { it.copyTo(this) }
         }
->>>>>>> 06408011f0f... JVM_IR: prefer to move, not copy, suspend lambda bodies
     }
 
     private fun fillInvokeSuspendForInlineBodies(irFile: IrFile) {
@@ -602,15 +597,7 @@ private class AddContinuationLowering(private val context: JvmBackendContext) : 
                             else JvmLoweredDeclarationOrigin.FOR_INLINE_STATE_MACHINE_TEMPLATE_CAPTURES_CROSSINLINE
                     }.apply {
                         annotations += view.annotations.map { it.deepCopyWithSymbols(this) }
-<<<<<<< HEAD
-                        copyTypeParameters(view.typeParameters)
-                        dispatchReceiverParameter = view.dispatchReceiverParameter?.copyTo(this)
-                        extensionReceiverParameter = view.extensionReceiverParameter?.copyTo(this)
-                        view.valueParameters.mapTo(valueParameters) { it.copyTo(this) }
-                        body = view.copyBodyTo(this)
-=======
                         copyParameterDeclarationsFrom(view)
->>>>>>> 06408011f0f... JVM_IR: prefer to move, not copy, suspend lambda bodies
                         copyAttributes(view)
                         body = view.copyBodyTo(this)
                     }
