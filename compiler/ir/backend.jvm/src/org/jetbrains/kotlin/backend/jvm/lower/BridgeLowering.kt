@@ -361,7 +361,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
             val redundantOverrides = bridge.overriddenSymbols.flatMapTo(mutableSetOf()) {
                 it.owner.allOverridden().map { override -> override.symbol }.asIterable()
             }
-            overriddenSymbols = bridge.overriddenSymbols.filter { it !in redundantOverrides }
+            overriddenSymbols.addAll(bridge.overriddenSymbols.filter { it !in redundantOverrides })
         }
 
     private fun IrClass.addSpecialBridge(specialBridge: SpecialBridge, target: IrSimpleFunction): IrSimpleFunction =
