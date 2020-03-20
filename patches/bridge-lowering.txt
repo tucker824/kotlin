@@ -1,0 +1,48 @@
+diff --git a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
+index 4f8a4017cce..903cbef7b59 100644
+--- a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
++++ b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
+@@ -178,7 +178,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+             // For lambda classes, we move overrides from the `invoke` function to its bridge. This will allow us to avoid boxing
+             // the return type of `invoke` in codegen for lambdas with primitive return type.
+             if (member.name == OperatorNameConventions.INVOKE && declaration.origin == JvmLoweredDeclarationOrigin.LAMBDA_IMPL) {
+-                member.overriddenSymbols = listOf()
++                member.overriddenSymbols.clear()
+             }
+         }
+ 
+@@ -334,7 +334,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+         }.apply {
+             dispatchReceiverParameter = thisReceiver?.copyTo(this, type = defaultType)
+             extensionReceiverParameter = irFunction.extensionReceiverParameter?.copyTo(this)
+-            valueParameters = irFunction.valueParameters.map { it.copyTo(this) }
++            valueParameters.addAll(irFunction.valueParameters.map { it.copyTo(this) })
+         }
+ 
+     private fun IrClass.addBridge(bridge: Bridge, target: IrSimpleFunction): IrSimpleFunction =
+@@ -396,6 +396,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+                     body = irBlockBody {
+                         // Change the parameter types to be Any? so that null checks are not generated. The checks
+                         // we insert here make them superfluous.
++                        val newValueParameters = ArrayList(valueParameters)
+                         argumentsToCheck.forEach {
+                             val parameterType = it.type
+                             if (!parameterType.isNullable()) {
+@@ -409,6 +410,8 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+                                 )
+                             }
+                         }
++                        valueParameters.clear()
++                        valueParameters.addAll(newValueParameters)
+                         // After the checks, insert the orignal method body.
+                         if (body is IrExpressionBody) {
+                             +irReturn((body as IrExpressionBody).expression)
+@@ -443,7 +446,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+         // with dispatch receivers pointing at a superclass instead of the current class.
+         dispatchReceiverParameter = irClass.thisReceiver?.copyTo(this, type = irClass.defaultType)
+         extensionReceiverParameter = from.extensionReceiverParameter?.copyWithTypeErasure(this, forceArgumentBoxing)
+-        valueParameters = from.valueParameters.map { it.copyWithTypeErasure(this, forceArgumentBoxing) }
++        valueParameters.addAll(from.valueParameters.map { it.copyWithTypeErasure(this, forceArgumentBoxing) })
+     }
+ 
+     private fun IrValueParameter.copyWithTypeErasure(target: IrSimpleFunction, forceBoxing: Boolean = false): IrValueParameter = copyTo(

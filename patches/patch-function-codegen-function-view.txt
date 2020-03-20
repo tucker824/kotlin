@@ -1,0 +1,13 @@
+diff --git a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/codegen/FunctionCodegen.kt b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/codegen/FunctionCodegen.kt
+index 0a8edcdc5d7..08f05318949 100644
+--- a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/codegen/FunctionCodegen.kt
++++ b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/codegen/FunctionCodegen.kt
+@@ -65,7 +65,7 @@ open class FunctionCodegen(
+ 
+         if (irFunction.origin != IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER) {
+             AnnotationCodegen(classCodegen, context, methodVisitor::visitAnnotation).genAnnotations(
+-                functionView,
++                irFunction,
+                 signature.asmMethod.returnType
+             )
+             // Not generating parameter annotations for default stubs fixes KT-7892, though

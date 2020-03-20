@@ -1,0 +1,11 @@
+diff --git a/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/util/IrUtils.kt b/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/util/IrUtils.kt
+index 1f6e490fee0..0f3108b272e 100644
+--- a/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/util/IrUtils.kt
++++ b/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/util/IrUtils.kt
+@@ -623,3 +623,6 @@ val IrFunctionReference.typeSubstitutionMap: Map<IrTypeParameterSymbol, IrType>
+ 
+ val IrFunctionAccessExpression.typeSubstitutionMap: Map<IrTypeParameterSymbol, IrType>
+     get() = getTypeSubstitutionMap(symbol.owner)
++
++val IrDeclaration.isFileClass: Boolean
++    get() = origin == IrDeclarationOrigin.FILE_CLASS || origin == IrDeclarationOrigin.MULTIFILE_PART_CLASS

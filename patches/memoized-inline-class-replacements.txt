@@ -1,0 +1,89 @@
+diff --git a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/inlineclasses/MemoizedInlineClassReplacements.kt b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/inlineclasses/MemoizedInlineClassReplacements.kt
+index 97221ac19ac..9b1b6d7ade9 100644
+--- a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/inlineclasses/MemoizedInlineClassReplacements.kt
++++ b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/inlineclasses/MemoizedInlineClassReplacements.kt
+@@ -125,27 +125,12 @@ class MemoizedInlineClassReplacements {
+         }
+     }
+ 
+-<<<<<<< HEAD
+-    private fun createMethodReplacement(function: IrFunction): IrReplacementFunction? {
+-        require(function.dispatchReceiverParameter != null && function is IrSimpleFunction)
+-        val overrides = function.overriddenSymbols.mapNotNull {
+-            getReplacementFunction(it.owner)?.function?.symbol as? IrSimpleFunctionSymbol
+-        }
+-        if (function.origin == IrDeclarationOrigin.FAKE_OVERRIDE && overrides.isEmpty())
+-            return null
+-
+-        val parameterMap = mutableMapOf<IrValueParameterSymbol, IrValueParameter>()
+-        val replacement = buildReplacement(function) {
+-            metadata = function.metadata
+-            overriddenSymbols.addAll(overrides)
+-=======
+     private fun createMethodReplacement(function: IrFunction): IrSimpleFunction =
+         buildReplacement(function) {
+             require(function.dispatchReceiverParameter != null && function is IrSimpleFunction)
+-            overriddenSymbols = function.overriddenSymbols.map {
++            overriddenSymbols.addAll(function.overriddenSymbols.map {
+                 getReplacementFunction(it.owner)?.symbol ?: it
+-            }
+->>>>>>> 66cbe3b1a8e... JVM IR: Remove IrReplacementFunction
++            })
+ 
+             for ((index, parameter) in function.explicitParameters.withIndex()) {
+                 val name = if (parameter == function.extensionReceiverParameter) Name.identifier("\$receiver") else parameter.name
+@@ -162,25 +147,10 @@ class MemoizedInlineClassReplacements {
+                 newParameter.defaultValue = parameter.defaultValue?.patchDeclarationParents(this)
+             }
+         }
+-<<<<<<< HEAD
+-        return IrReplacementFunction(replacement, parameterMap)
+-    }
+-
+-    private fun createStaticReplacement(function: IrFunction): IrReplacementFunction {
+-        val parameterMap = mutableMapOf<IrValueParameterSymbol, IrValueParameter>()
+-        val replacement = buildReplacement(function) {
+-            // Generate metadata for the replacement function instead of the original.
+-            if (function is IrFunctionBase) {
+-                metadata = function.metadata
+-                function.metadata = null
+-            }
+-
+-=======
+ 
+     private fun createStaticReplacement(function: IrFunction): IrSimpleFunction =
+         buildReplacement(function) {
+             val newValueParameters = ArrayList<IrValueParameter>()
+->>>>>>> 66cbe3b1a8e... JVM IR: Remove IrReplacementFunction
+             for ((index, parameter) in function.explicitParameters.withIndex()) {
+                 val name = when (parameter) {
+                     function.dispatchReceiverParameter -> Name.identifier("arg$index")
+@@ -193,18 +163,11 @@ class MemoizedInlineClassReplacements {
+                     else -> parameter.origin
+                 }
+                 val newParameter = parameter.copyTo(this, index = index, name = name, defaultValue = null, origin = parameterOrigin)
+-<<<<<<< HEAD
+-                valueParameters.add(newParameter)
+-                // See comment next to a similar line above.
+-                newParameter.defaultValue = parameter.defaultValue?.patchDeclarationParents(this)
+-                parameterMap[parameter.symbol] = newParameter
+-=======
+                 newValueParameters += newParameter
+                 // See comment next to a similar line above.
+                 newParameter.defaultValue = parameter.defaultValue?.patchDeclarationParents(this)
+->>>>>>> 66cbe3b1a8e... JVM IR: Remove IrReplacementFunction
+             }
+-            valueParameters = newValueParameters
++            valueParameters.addAll(newValueParameters)
+         }
+ 
+     private fun buildReplacement(function: IrFunction, body: IrFunctionImpl.() -> Unit) =
+@@ -221,7 +184,7 @@ class MemoizedInlineClassReplacements {
+             copyTypeParameters(function.allTypeParameters)
+             correspondingPropertySymbol = function.safeAs<IrSimpleFunction>()?.correspondingPropertySymbol
+             metadata = function.metadata
+-            function.safeAs<IrFunctionBase<*>>()?.metadata = null
++            function.safeAs<IrFunctionBase>()?.metadata = null
+             body()
+         }
+ }

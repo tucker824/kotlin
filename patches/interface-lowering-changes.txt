@@ -1,0 +1,55 @@
+diff --git a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/ir/IrUtils.kt b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/ir/IrUtils.kt
+index 4cc26f14814..c7be42a5727 100644
+--- a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/ir/IrUtils.kt
++++ b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/ir/IrUtils.kt
+@@ -250,7 +250,7 @@ fun IrFunctionAccessExpression.copyFromWithPlaceholderTypeArguments(existingCall
+         existingCall.symbol.owner,
+         this.symbol.owner,
+         receiversAsArguments = true,
+-        argumentsAsReceivers = false,
++        argumentsAsReceivers = false
+     )
+     var offset = 0
+     existingCall.symbol.owner.parentAsClass.typeParameters.forEach { _ ->
+diff --git a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/InterfaceLowering.kt b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/InterfaceLowering.kt
+index e15db1699b1..be7401bae91 100644
+--- a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/InterfaceLowering.kt
++++ b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/InterfaceLowering.kt
+@@ -265,17 +265,8 @@ internal class InterfaceLowering(val context: JvmBackendContext) : IrElementTran
+             if (newFunction != null) {
+                 with(expression) {
+                     IrFunctionReferenceImpl(
+-<<<<<<< HEAD
+-                        startOffset,
+-                        endOffset,
+-                        type,
+-                        newFunction.symbol,
+-                        typeArgumentsCount,
+-                        origin
+-=======
+                         startOffset, endOffset, type, newFunction.symbol, newFunction.typeParameters.size, newFunction.valueParameters.size,
+-                        expression.reflectionTarget, origin
+->>>>>>> 5d766eace40... JVM IR: process type arguments for function references in DefaultImpls
++                        origin
+                     ).apply {
+                         copyFromWithPlaceholderTypeArguments(expression, context.irBuiltIns)
+                         copyAttributes(expression)
+diff --git a/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/expressions/IrCallableReference.kt b/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/expressions/IrCallableReference.kt
+index 18ece7707a2..ff4f3585bb4 100644
+--- a/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/expressions/IrCallableReference.kt
++++ b/compiler/ir/ir.tree/src/org/jetbrains/kotlin/ir/expressions/IrCallableReference.kt
+@@ -20,13 +20,8 @@ import org.jetbrains.kotlin.ir.symbols.*
+ 
+ interface IrCallableReference : IrMemberAccessExpression
+ 
+-<<<<<<< HEAD
+-interface IrFunctionReference : IrCallableReference {
+-    override val symbol: IrFunctionSymbol
+-=======
+ interface IrFunctionReference : IrCallableReference, IrFunctionAccessExpression {
+-    val reflectionTarget: IrFunctionSymbol?
+->>>>>>> 5d766eace40... JVM IR: process type arguments for function references in DefaultImpls
++    override val symbol: IrFunctionSymbol
+ }
+ 
+ interface IrPropertyReference : IrCallableReference {

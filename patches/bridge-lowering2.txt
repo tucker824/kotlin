@@ -1,0 +1,13 @@
+diff --git a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
+index f6091cea887..310c6200b57 100644
+--- a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
++++ b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
+@@ -361,7 +361,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+             val redundantOverrides = bridge.overriddenSymbols.flatMapTo(mutableSetOf()) {
+                 it.owner.allOverridden().map { override -> override.symbol }.asIterable()
+             }
+-            overriddenSymbols = bridge.overriddenSymbols.filter { it !in redundantOverrides }
++            overriddenSymbols.addAll(bridge.overriddenSymbols.filter { it !in redundantOverrides })
+         }
+ 
+     private fun IrClass.addSpecialBridge(specialBridge: SpecialBridge, target: IrSimpleFunction): IrSimpleFunction =

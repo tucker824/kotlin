@@ -1,0 +1,44 @@
+diff --git a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
+index a76b61a5b60..4439eba92e8 100644
+--- a/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
++++ b/compiler/ir/backend.jvm/src/org/jetbrains/kotlin/backend/jvm/lower/BridgeLowering.kt
+@@ -137,7 +137,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+         val specializedReturnType: IrType? = null,
+         val methodInfo: SpecialMethodWithDefaultInfo? = null,
+         val superQualifierSymbol: IrClassSymbol? = null,
+-        val isFinal: Boolean = true,
++        val isFinal: Boolean = true
+     )
+ 
+     override fun lower(irFile: IrFile) = irFile.transformChildrenVoid()
+@@ -231,7 +231,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
+                             val superBridge = SpecialBridge(
+                                 irFunction, irFunction.jvmMethod, superQualifierSymbol = superTarget.parentAsClass.symbol,
+                                 methodInfo = specialBridge.methodInfo?.copy(argumentsToCheck = 0), // For potential argument boxing
+-                                isFinal = false,
++                                isFinal = false
+                             )
+                             irClass.declarations.remove(irFunction)
+                             irClass.addSpecialBridge(superBridge, superTarget)
+diff --git a/compiler/resolution/src/org/jetbrains/kotlin/resolve/calls/components/ArgumentsUtils.kt b/compiler/resolution/src/org/jetbrains/kotlin/resolve/calls/components/ArgumentsUtils.kt
+index dbb422e1f85..0652d8745ae 100644
+--- a/compiler/resolution/src/org/jetbrains/kotlin/resolve/calls/components/ArgumentsUtils.kt
++++ b/compiler/resolution/src/org/jetbrains/kotlin/resolve/calls/components/ArgumentsUtils.kt
+@@ -120,17 +120,6 @@ private fun KotlinCallArgument.isArrayAssignedAsNamedArgumentInAnnotation(
+     return isParameterOfAnnotation(parameter) && this.isArrayOrArrayLiteral()
+ }
+ 
+-private fun KotlinCallArgument.isArrayAssignedAsNamedArgumentInFunction(
+-    parameter: ParameterDescriptor,
+-    languageVersionSettings: LanguageVersionSettings
+-): Boolean {
+-    if (!languageVersionSettings.supportsFeature(LanguageFeature.AllowAssigningArrayElementsToVarargsInNamedFormForFunctions)) return false
+-
+-    if (this.argumentName == null || !parameter.isVararg) return false
+-
+-    return this.isArrayOrArrayLiteral()
+-}
+-
+ fun KotlinCallArgument.isArrayOrArrayLiteral(): Boolean {
+     if (this is CollectionLiteralKotlinCallArgument) return true
+     if (this !is SimpleKotlinCallArgument) return false
