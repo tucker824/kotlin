@@ -250,7 +250,7 @@ fun IrFunctionAccessExpression.copyFromWithPlaceholderTypeArguments(existingCall
         existingCall.symbol.owner,
         this.symbol.owner,
         receiversAsArguments = true,
-        argumentsAsReceivers = false,
+        argumentsAsReceivers = false
     )
     var offset = 0
     existingCall.symbol.owner.parentAsClass.typeParameters.forEach { _ ->

@@ -265,17 +265,8 @@ internal class InterfaceLowering(val context: JvmBackendContext) : IrElementTran
             if (newFunction != null) {
                 with(expression) {
                     IrFunctionReferenceImpl(
-<<<<<<< HEAD
-                        startOffset,
-                        endOffset,
-                        type,
-                        newFunction.symbol,
-                        typeArgumentsCount,
-                        origin
-=======
                         startOffset, endOffset, type, newFunction.symbol, newFunction.typeParameters.size, newFunction.valueParameters.size,
-                        expression.reflectionTarget, origin
->>>>>>> 5d766eace40... JVM IR: process type arguments for function references in DefaultImpls
+                        origin
                     ).apply {
                         copyFromWithPlaceholderTypeArguments(expression, context.irBuiltIns)
                         copyAttributes(expression)

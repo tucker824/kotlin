@@ -20,13 +20,8 @@ import org.jetbrains.kotlin.ir.symbols.*
 
 interface IrCallableReference : IrMemberAccessExpression
 
-<<<<<<< HEAD
-interface IrFunctionReference : IrCallableReference {
-    override val symbol: IrFunctionSymbol
-=======
 interface IrFunctionReference : IrCallableReference, IrFunctionAccessExpression {
-    val reflectionTarget: IrFunctionSymbol?
->>>>>>> 5d766eace40... JVM IR: process type arguments for function references in DefaultImpls
+    override val symbol: IrFunctionSymbol
 }
 
 interface IrPropertyReference : IrCallableReference {
