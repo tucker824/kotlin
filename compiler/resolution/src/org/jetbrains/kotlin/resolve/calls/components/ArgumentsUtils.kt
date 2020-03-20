@@ -120,17 +120,6 @@ private fun KotlinCallArgument.isArrayAssignedAsNamedArgumentInAnnotation(
     return isParameterOfAnnotation(parameter) && this.isArrayOrArrayLiteral()
 }
 
-private fun KotlinCallArgument.isArrayAssignedAsNamedArgumentInFunction(
-    parameter: ParameterDescriptor,
-    languageVersionSettings: LanguageVersionSettings
-): Boolean {
-    if (!languageVersionSettings.supportsFeature(LanguageFeature.AllowAssigningArrayElementsToVarargsInNamedFormForFunctions)) return false
-
-    if (this.argumentName == null || !parameter.isVararg) return false
-
-    return this.isArrayOrArrayLiteral()
-}
-
 fun KotlinCallArgument.isArrayOrArrayLiteral(): Boolean {
     if (this is CollectionLiteralKotlinCallArgument) return true
     if (this !is SimpleKotlinCallArgument) return false

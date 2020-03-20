@@ -137,7 +137,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
         val specializedReturnType: IrType? = null,
         val methodInfo: SpecialMethodWithDefaultInfo? = null,
         val superQualifierSymbol: IrClassSymbol? = null,
-        val isFinal: Boolean = true,
+        val isFinal: Boolean = true
     )
 
     override fun lower(irFile: IrFile) = irFile.transformChildrenVoid()
@@ -231,7 +231,7 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
                             val superBridge = SpecialBridge(
                                 irFunction, irFunction.jvmMethod, superQualifierSymbol = superTarget.parentAsClass.symbol,
                                 methodInfo = specialBridge.methodInfo?.copy(argumentsToCheck = 0), // For potential argument boxing
-                                isFinal = false,
+                                isFinal = false
                             )
                             irClass.declarations.remove(irFunction)
                             irClass.addSpecialBridge(superBridge, superTarget)
