@@ -73,8 +73,8 @@ private class CompanionObjectJvmStaticLowering(val context: JvmBackendContext) :
                 }.apply {
                     copyTypeParametersFrom(jvmStaticFunction)
                     extensionReceiverParameter = jvmStaticFunction.extensionReceiverParameter?.copyTo(this)
-                    valueParameters = jvmStaticFunction.valueParameters.map { it.copyTo(this) }
-                    annotations = jvmStaticFunction.annotations.map { it.deepCopyWithSymbols() }
+                    valueParameters.addAll(jvmStaticFunction.valueParameters.map { it.copyTo(this) })
+                    annotations.addAll(jvmStaticFunction.annotations.map { it.deepCopyWithSymbols() })
                 }
                 companion.declarations.remove(jvmStaticFunction)
                 companion.addProxy(staticExternal, companion, isStatic = false)
@@ -94,19 +94,12 @@ private class CompanionObjectJvmStaticLowering(val context: JvmBackendContext) :
             isSuspend = target.isSuspend
         }.apply {
             copyTypeParametersFrom(target)
-<<<<<<< HEAD
-            target.extensionReceiverParameter?.let { extensionReceiverParameter = it.copyTo(this) }
-            target.valueParameters.mapTo(valueParameters) { it.copyTo(this) }
-
-            target.annotations.mapTo(annotations) { it.deepCopyWithSymbols() }
-=======
             if (!isStatic) {
                 dispatchReceiverParameter = thisReceiver?.copyTo(this, type = defaultType)
             }
-            extensionReceiverParameter = target.extensionReceiverParameter?.copyTo(this)
-            valueParameters = target.valueParameters.map { it.copyTo(this) }
-            annotations = target.annotations.map { it.deepCopyWithSymbols() }
->>>>>>> 058b2295440... JVM IR: Handle external static declarations in companion objects
+            target.extensionReceiverParameter?.let { extensionReceiverParameter = it.copyTo(this) }
+            target.valueParameters.mapTo(valueParameters) { it.copyTo(this) }
+            target.annotations.mapTo(annotations) { it.deepCopyWithSymbols() }
 
             val proxy = this
             val companionInstanceField = context.declarationFactory.getFieldForObjectInstance(companion)
