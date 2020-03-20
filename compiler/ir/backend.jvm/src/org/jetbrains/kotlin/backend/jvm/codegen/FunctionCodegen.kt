@@ -65,7 +65,7 @@ open class FunctionCodegen(
 
         if (irFunction.origin != IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER) {
             AnnotationCodegen(classCodegen, context, methodVisitor::visitAnnotation).genAnnotations(
-                functionView,
+                irFunction,
                 signature.asmMethod.returnType
             )
             // Not generating parameter annotations for default stubs fixes KT-7892, though
