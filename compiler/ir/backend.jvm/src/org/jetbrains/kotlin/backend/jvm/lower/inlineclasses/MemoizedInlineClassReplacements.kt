@@ -128,14 +128,6 @@ class MemoizedInlineClassReplacements {
     private fun createMethodReplacement(function: IrFunction): IrSimpleFunction =
         buildReplacement(function, function.origin) {
             require(function.dispatchReceiverParameter != null && function is IrSimpleFunction)
-<<<<<<< HEAD
-            overriddenSymbols.addAll(function.overriddenSymbols.map {
-                getReplacementFunction(it.owner)?.symbol ?: it
-            })
-
-=======
-            val newValueParameters = ArrayList<IrValueParameter>()
->>>>>>> 12e31a17603... JVM IR: Use dispatchReceiver to calculate owner in MethodSignatureMapper
             for ((index, parameter) in function.explicitParameters.withIndex()) {
                 val name = if (parameter == function.extensionReceiverParameter) Name.identifier("\$receiver") else parameter.name
                 val newParameter: IrValueParameter
@@ -189,19 +181,15 @@ class MemoizedInlineClassReplacements {
             annotations += function.annotations
             copyTypeParameters(function.allTypeParameters)
             metadata = function.metadata
-<<<<<<< HEAD
             function.safeAs<IrFunctionBase>()?.metadata = null
-=======
-            function.safeAs<IrFunctionBase<*>>()?.metadata = null
 
             if (function is IrSimpleFunction) {
                 correspondingPropertySymbol = function.correspondingPropertySymbol
-                overriddenSymbols = function.overriddenSymbols.map {
+                overriddenSymbols.addAll(function.overriddenSymbols.map {
                     getReplacementFunction(it.owner)?.symbol ?: it
-                }
+                })
             }
 
->>>>>>> 12e31a17603... JVM IR: Use dispatchReceiver to calculate owner in MethodSignatureMapper
             body()
         }
 }
