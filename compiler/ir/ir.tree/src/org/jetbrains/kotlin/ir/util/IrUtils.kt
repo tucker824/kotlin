@@ -623,3 +623,6 @@ val IrFunctionReference.typeSubstitutionMap: Map<IrTypeParameterSymbol, IrType>
 
 val IrFunctionAccessExpression.typeSubstitutionMap: Map<IrTypeParameterSymbol, IrType>
     get() = getTypeSubstitutionMap(symbol.owner)
+
+val IrDeclaration.isFileClass: Boolean
+    get() = origin == IrDeclarationOrigin.FILE_CLASS || origin == IrDeclarationOrigin.MULTIFILE_PART_CLASS
