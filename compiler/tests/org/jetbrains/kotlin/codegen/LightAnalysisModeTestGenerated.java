@@ -196,11 +196,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             runTest("compiler/testData/codegen/box/annotations/syntheticMethodForJvmStaticProperty.kt");
         }
 
-        @TestMetadata("syntheticMethodForProperty.kt")
-        public void testSyntheticMethodForProperty() throws Exception {
-            runTest("compiler/testData/codegen/box/annotations/syntheticMethodForProperty.kt");
-        }
-
         @TestMetadata("typeAnnotationOnJdk6.kt")
         public void testTypeAnnotationOnJdk6() throws Exception {
             runTest("compiler/testData/codegen/box/annotations/typeAnnotationOnJdk6.kt");
@@ -23162,6 +23157,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             @TestMetadata("parameterNamesAndNullability.kt")
             public void testParameterNamesAndNullability() throws Exception {
                 runTest("compiler/testData/codegen/box/reflection/lambdaClasses/parameterNamesAndNullability.kt");
+            }
+
+            @TestMetadata("reflectOnDefaultWithInlineClassArgument.kt")
+            public void testReflectOnDefaultWithInlineClassArgument() throws Exception {
+                runTest("compiler/testData/codegen/box/reflection/lambdaClasses/reflectOnDefaultWithInlineClassArgument.kt");
             }
 
             @TestMetadata("reflectOnLambdaInField.kt")
