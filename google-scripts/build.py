@@ -4,13 +4,21 @@ import os
 import subprocess
 import sys
 
-BUILD_VERSION = "1.4.20-google-ir-01"
+BUILD_VERSION = "1.4.20-google-ir-00"
+
+ARCHIVE_PREFIX = "r8-releases/kotlin-releases"
+STORAGE_URL_PREFIX = "http://storage.googleapis.com"
 
 ROOT = os.path.abspath(os.path.normpath(os.path.join(__file__, '..', '..')))
 THIRD_PARTY = os.path.abspath(os.path.normpath(os.path.join(__file__, '..', 'third_party')))
 JDK_DIR = os.path.join(THIRD_PARTY, "jdk8", "linux-x86")
 JDK_9_DIR = os.path.join(THIRD_PARTY, "jdk9", "linux")
 BUNCH = os.path.join(THIRD_PARTY, "bunch-cli-1.1.0", "bin", "bunch")
+COMPILER_ZIP_NAME = "kotlin-compiler-%s.zip" % BUILD_VERSION
+COMPILER_ZIP_PATH = os.path.join(ROOT, "dist", COMPILER_ZIP_NAME)
+AS_PLUGIN_SRC_ZIP_NAME = "kotlin-plugin.zip"
+AS_PLUGIN_TARGET_ZIP_NAME = "kotlin-plugin-%s-as42.zip" % BUILD_VERSION
+AS_PLUGIN_ZIP_PATH = os.path.join(ROOT, "build", AS_PLUGIN_SRC_ZIP_NAME)
 
 class ChangedWorkingDirectory(object):
  def __init__(self, working_directory, quiet=False):
@@ -64,26 +72,52 @@ def download_deps():
   download_from_google_cloud_storage(os.path.join(THIRD_PARTY, "jdk9", "linux.tar.gz.sha1"))
   download_from_google_cloud_storage(os.path.join(THIRD_PARTY, "bunch-cli-1.1.0.tar.gz.sha1"))
 
+def upload_file_to_cloud_storage(source, destination, public_read=True):
+  cmd = ['gsutil.py', 'cp']
+  if public_read:
+    cmd += ['-a', 'public-read']
+  cmd += [source, destination]
+  print_cmd(cmd)
+  subprocess.check_call(cmd)
+
+def get_destination(name):
+    return "gs://%s/%s/%s" % (ARCHIVE_PREFIX, BUILD_VERSION, name)
+
+def get_download_url(name):
+    return "%s/%s/%s/%s" % (STORAGE_URL_PREFIX, ARCHIVE_PREFIX, BUILD_VERSION, name)
+
 def build_and_upload_compiler():
-  cmd = ["./gradlew", "-Pbuild.number=%s" % BUILD_VERSION, "zipCompiler"]
+  cmd = [
+      "./gradlew",
+      "-Pteamcity=true",
+      "-Pbuild.number=%s" % BUILD_VERSION,
+      "zipCompiler"
+  ]
   with ChangedWorkingDirectory(ROOT):
     print_cmd(cmd)
-    subprocess.call(cmd, env=get_java_env())
-  # TODO(ager): Upload to cloud storage.
+    subprocess.check_call(cmd, env=get_java_env())
+  upload_file_to_cloud_storage(COMPILER_ZIP_PATH, get_destination(COMPILER_ZIP_NAME))
+  print "Uploaded to: %s" % get_download_url(COMPILER_ZIP_NAME)
   git_reset()
-
 
 def bunch_switch(target):
   cmd = [BUNCH, "switch", target]
   with ChangedWorkingDirectory(ROOT):
     print_cmd(cmd)
-    subprocess.call(cmd)
+    subprocess.check_call(cmd)
+
+def bunch_restore():
+  git_reset()
+  cmd = [BUNCH, "restore"]
+  with ChangedWorkingDirectory(ROOT):
+    print_cmd(cmd)
+    subprocess.check_call(cmd)
 
 def git_reset():
   cmd = ["git", "reset", "--hard"]
   with ChangedWorkingDirectory(ROOT):
     print_cmd(cmd)
-    subprocess.call(cmd)
+    subprocess.check_call(cmd)
 
 def build_and_upload_android_studio_plugin():
   bunch_switch("as42")
@@ -99,7 +133,7 @@ def build_and_upload_android_studio_plugin():
   ]
   with ChangedWorkingDirectory(ROOT):
     print_cmd(cmd)
-    subprocess.call(cmd, env=get_java_env())
+    subprocess.check_call(cmd, env=get_java_env())
   cmd = [
     "./gradlew",
     "writePluginVersion",
@@ -111,8 +145,10 @@ def build_and_upload_android_studio_plugin():
   ]
   with ChangedWorkingDirectory(ROOT):
     print_cmd(cmd)
-    subprocess.call(cmd, env=get_java_env())
-  # TODO(ager): Upload to cloud storage.
+    subprocess.check_call(cmd, env=get_java_env())
+  upload_file_to_cloud_storage(AS_PLUGIN_ZIP_PATH, get_destination(AS_PLUGIN_TARGET_ZIP_NAME))
+  bunch_restore()
+  print "Uploaded to: %s" % get_download_url(COMPILER_ZIP_NAME)
 
 def main():
   download_deps()
