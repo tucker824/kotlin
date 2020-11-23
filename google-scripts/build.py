@@ -148,7 +148,7 @@ def build_and_upload_android_studio_plugin():
     subprocess.check_call(cmd, env=get_java_env())
   upload_file_to_cloud_storage(AS_PLUGIN_ZIP_PATH, get_destination(AS_PLUGIN_TARGET_ZIP_NAME))
   bunch_restore()
-  print "Uploaded to: %s" % get_download_url(COMPILER_ZIP_NAME)
+  print "Uploaded to: %s" % get_download_url(AS_PLUGIN_TARGET_ZIP_NAME)
 
 def main():
   download_deps()
