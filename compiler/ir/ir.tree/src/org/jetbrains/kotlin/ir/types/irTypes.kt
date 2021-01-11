@@ -28,18 +28,20 @@ import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 fun IrType.withHasQuestionMark(newHasQuestionMark: Boolean): IrType =
     when (this) {
-        is IrSimpleType ->
-            if (this.hasQuestionMark == newHasQuestionMark)
-                this
-            else
-                buildSimpleType {
-                    hasQuestionMark = newHasQuestionMark
-                    kotlinType = originalKotlinType?.run {
-                        if (newHasQuestionMark) makeNullable() else makeNotNullable()
-                    }
-                }
+        is IrSimpleType -> withHasQuestionMark(newHasQuestionMark)
         else -> this
     }
+
+fun IrSimpleType.withHasQuestionMark(newHasQuestionMark: Boolean): IrSimpleType =
+    if (this.hasQuestionMark == newHasQuestionMark)
+        this
+    else
+        buildSimpleType {
+            hasQuestionMark = newHasQuestionMark
+            kotlinType = originalKotlinType?.run {
+                if (newHasQuestionMark) makeNullable() else makeNotNullable()
+            }
+        }
 
 fun IrType.addAnnotations(newAnnotations: List<IrConstructorCall>): IrType =
     if (newAnnotations.isEmpty())
