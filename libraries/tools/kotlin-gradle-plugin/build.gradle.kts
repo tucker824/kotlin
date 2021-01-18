@@ -21,6 +21,7 @@ val jarContents by configurations.creating
 repositories {
     google()
     maven("https://plugins.gradle.org/m2/")
+    maven("/home/gavra/projects/studio-master-dev/out/repo")
 }
 
 pill {
@@ -84,6 +85,7 @@ dependencies {
     functionalTestImplementation("com.android.tools.build:gradle:4.0.1") {
         because("Functional tests are using APIs from Android. Latest Version is used to avoid NoClassDefFoundError")
     }
+//    compileOnly("com.android.tools.build:gradle-api:7.0.0-dev") { isTransitive = false }
 
     testImplementation(intellijDep()) { includeJars("junit", "serviceMessages", rootProject = rootProject) }
 
@@ -208,6 +210,11 @@ pluginBundle {
         name = "kotlinMultiplatformPluginPm20",
         id = "org.jetbrains.kotlin.multiplatform.pm20",
         display = "Kotlin Multiplatform plugin with PM2.0"
+    )
+    create(
+        name = "kotlinBasePlugin",
+        id = "org.jetbrains.kotlin.base",
+        display = "Gradle plugin with basic Kotlin support"
     )
 }
 

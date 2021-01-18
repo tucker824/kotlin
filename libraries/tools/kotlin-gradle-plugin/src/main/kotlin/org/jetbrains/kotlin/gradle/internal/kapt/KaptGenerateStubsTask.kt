@@ -23,9 +23,8 @@ import org.gradle.api.tasks.*
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptionsImpl
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinCompilationData
-import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.*
 import org.jetbrains.kotlin.gradle.tasks.FilteringSourceRootsContainer
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.SourceRoots
 import org.jetbrains.kotlin.gradle.utils.isParentOf
 import org.jetbrains.kotlin.incremental.classpathAsList
@@ -34,7 +33,7 @@ import java.io.File
 import java.util.concurrent.Callable
 
 @CacheableTask
-abstract class KaptGenerateStubsTask : KotlinCompile(KotlinJvmOptionsImpl()) {
+abstract class KaptGenerateStubsTask : KotlinCompile(KotlinJvmOptionsImpl()), KaptGenerateStubsTaskApi {
 
     class Configurator(private val kotlinCompileTask: KotlinCompile, kotlinCompilation: KotlinCompilationData<*>) :
         AbstractKotlinCompile.Configurator<KaptGenerateStubsTask>(kotlinCompilation) {

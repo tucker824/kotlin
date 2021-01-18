@@ -24,6 +24,7 @@ internal sealed class SourceRoots(val kotlinSourceFiles: List<File>) {
         logger.kotlinDebug { "$taskName source roots: ${dumpPaths(kotlinSourceFiles)}" }
     }
 
+    // TODO: make everything lazy, and avoid eagerly traversing the file system
     class ForJvm constructor(
         kotlinSourceFiles: List<File>,
         private val javaSourceRootsProvider: () -> Set<File>
@@ -34,7 +35,6 @@ internal sealed class SourceRoots(val kotlinSourceFiles: List<File>) {
         constructor(kotlinSourceFiles: List<File>, allSourceRoots: FileCollection, taskSource: FileCollection) : this(kotlinSourceFiles, {
             findRootsForSources(allSourceRoots, taskSource.filter(File::isJavaFile)).toSet()
         })
-
         companion object {
             fun create(taskSource: FileTree, sourceRoots: FilteringSourceRootsContainer, sourceFilesExtensions: List<String>): ForJvm {
                 val kotlinSourceFiles = (taskSource as Iterable<File>).filter { it.isKotlinFile(sourceFilesExtensions) }

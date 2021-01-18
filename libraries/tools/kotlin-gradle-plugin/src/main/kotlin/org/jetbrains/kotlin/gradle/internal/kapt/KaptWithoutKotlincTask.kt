@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.gradle.internal.kapt.classloaders.rootOrSelf
 import org.jetbrains.kotlin.gradle.internal.kapt.incremental.KaptIncrementalChanges
 import org.jetbrains.kotlin.gradle.plugin.KotlinAndroidPluginWrapper
 import org.jetbrains.kotlin.gradle.tasks.CompilerPluginOptions
+import org.jetbrains.kotlin.gradle.tasks.KaptKotlinTaskApi
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.findKotlinStdlibClasspath
 import org.jetbrains.kotlin.gradle.utils.isGradleVersionAtLeast
@@ -37,7 +38,7 @@ abstract class KaptWithoutKotlincTask @Inject constructor(
     objectFactory: ObjectFactory,
     private val providerFactory: ProviderFactory,
     private val workerExecutor: WorkerExecutor
-) : KaptTask(objectFactory) {
+) : KaptTask(objectFactory), KaptKotlinTaskApi {
 
     class Configurator(kotlinCompileTask: KotlinCompile): KaptTask.Configurator<KaptWithoutKotlincTask>(kotlinCompileTask) {
         override fun configure(task: KaptWithoutKotlincTask) {

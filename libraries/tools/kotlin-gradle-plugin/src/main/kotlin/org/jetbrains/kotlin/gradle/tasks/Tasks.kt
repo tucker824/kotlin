@@ -92,11 +92,11 @@ abstract class AbstractKotlinCompileTool<T : CommonToolArguments>
     @get:Classpath
     @get:InputFiles
     internal val computedCompilerClasspath: FileCollection = project.objects.fileCollection().from({
-        when {
-            useFallbackCompilerSearch -> findKotlinCompilerClasspath(project)
-            else -> defaultCompilerClasspath
-        }
-    })
+                                                                                                       when {
+                                                                                                           useFallbackCompilerSearch -> findKotlinCompilerClasspath(project)
+                                                                                                           else -> defaultCompilerClasspath
+                                                                                                       }
+                                                                                                   })
 
     protected abstract fun findKotlinCompilerClasspath(project: Project): List<File>
 
@@ -179,7 +179,7 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments> : AbstractKotl
 
     // avoid creating directory in getter: this can lead to failure in parallel build
     @get:LocalState
-    internal val taskBuildDirectory: DirectoryProperty = objects.directoryProperty()
+    val taskBuildDirectory: DirectoryProperty = objects.directoryProperty()
 
     @get:Internal
     internal val buildHistoryFile
@@ -235,7 +235,7 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments> : AbstractKotl
     internal val commonSourceSet: ConfigurableFileCollection = objects.fileCollection()
 
     @get:Input
-    internal val moduleName: Property<String> = objects.property(String::class.java)
+    val moduleName: Property<String> = objects.property(String::class.java)
 
     @get:Internal
     internal val friendSourceSets = objects.listProperty(String::class.java)
@@ -389,13 +389,22 @@ internal inline val <reified T : Task> T.thisTaskProvider: TaskProvider<out T>
 @CacheableTask
 abstract class KotlinCompile @Inject constructor(
     override val kotlinOptions: KotlinJvmOptions
-) : AbstractKotlinCompile<K2JVMCompilerArguments>(), KotlinJvmCompile {
+) : AbstractKotlinCompile<K2JVMCompilerArguments>(), KotlinJvmCompile, KotlinJvmCompileApi {
 
     class Configurator(kotlinCompilation: KotlinCompilationData<*>) : AbstractKotlinCompile.Configurator<KotlinCompile>(kotlinCompilation) {
     }
 
+    override val customPluginOptions: Property<CompilerPluginOptions>
+        get() = TODO("Not yet implemented")
+
+    override fun applyFrom(ext: KotlinTopLevelExtensionConfig) {
+        TODO("Not yet implemented")
+    }
+
     @get:Internal
     internal val parentKotlinOptionsImpl: Property<KotlinJvmOptions> = objects.property(KotlinJvmOptions::class.java)
+
+    override val parentOptionsProperty: Property<KotlinJvmOptions> = parentKotlinOptionsImpl
 
     @get:Internal
     @field:Transient
