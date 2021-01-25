@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 
-BUILD_VERSION = "1.4.20-google-ir-00"
+BUILD_VERSION = "1.4.30-google-ir-02"
 
 ARCHIVE_PREFIX = "r8-releases/kotlin-releases"
 STORAGE_URL_PREFIX = "http://storage.googleapis.com"
@@ -19,6 +19,9 @@ COMPILER_ZIP_PATH = os.path.join(ROOT, "dist", COMPILER_ZIP_NAME)
 AS_PLUGIN_SRC_ZIP_NAME = "kotlin-plugin.zip"
 AS_PLUGIN_TARGET_ZIP_NAME = "kotlin-plugin-%s-as42.zip" % BUILD_VERSION
 AS_PLUGIN_ZIP_PATH = os.path.join(ROOT, "build", AS_PLUGIN_SRC_ZIP_NAME)
+KOTLIN_PLUGIN_SRC_ZIP_NAME = "kotlin-plugin.zip"
+KOTLIN_PLUGIN_TARGET_ZIP_NAME = "kotlin-plugin-%s-ij.zip" % BUILD_VERSION
+KOTLIN_PLUGIN_ZIP_PATH = os.path.join(ROOT, "build", AS_PLUGIN_SRC_ZIP_NAME)
 
 class ChangedWorkingDirectory(object):
  def __init__(self, working_directory, quiet=False):
@@ -101,6 +104,7 @@ def build_and_upload_compiler():
   git_reset()
 
 def bunch_switch(target):
+  git_reset()
   cmd = [BUNCH, "switch", target]
   with ChangedWorkingDirectory(ROOT):
     print_cmd(cmd)
@@ -118,6 +122,36 @@ def git_reset():
   with ChangedWorkingDirectory(ROOT):
     print_cmd(cmd)
     subprocess.check_call(cmd)
+
+def build_and_upload_kotlin_plugin():
+  cmd = [
+    "./gradlew",
+    "clean",
+    "cleanupArtifacts",
+    "ideaPlugin",
+    "-Pteamcity=true",
+    "-Pbuild.number=%s" % BUILD_VERSION,
+    "-PdeployVersion=%s" % BUILD_VERSION,
+    "-PpluginVersion=%s-release-IJ" % BUILD_VERSION
+  ]
+  with ChangedWorkingDirectory(ROOT):
+    print_cmd(cmd)
+    subprocess.check_call(cmd, env=get_java_env())
+  cmd = [
+    "./gradlew",
+    "writePluginVersion",
+    "zipPlugin",
+    "-Pteamcity=true",
+    "-Pbuild.number=%s" % BUILD_VERSION,
+    "-PdeployVersion=%s" % BUILD_VERSION,
+    "-PpluginVersion=%s-release-IJ" % BUILD_VERSION
+  ]
+  with ChangedWorkingDirectory(ROOT):
+    print_cmd(cmd)
+    subprocess.check_call(cmd, env=get_java_env())
+  upload_file_to_cloud_storage(KOTLIN_PLUGIN_ZIP_PATH, get_destination(KOTLIN_PLUGIN_TARGET_ZIP_NAME))
+  print "Uploaded to: %s" % get_download_url(KOTLIN_PLUGIN_TARGET_ZIP_NAME)
+  git_reset()
 
 def build_and_upload_android_studio_plugin():
   bunch_switch("as42")
@@ -149,10 +183,12 @@ def build_and_upload_android_studio_plugin():
   upload_file_to_cloud_storage(AS_PLUGIN_ZIP_PATH, get_destination(AS_PLUGIN_TARGET_ZIP_NAME))
   bunch_restore()
   print "Uploaded to: %s" % get_download_url(AS_PLUGIN_TARGET_ZIP_NAME)
+  git_reset()
 
 def main():
   download_deps()
   build_and_upload_compiler()
+  build_and_upload_kotlin_plugin()
   build_and_upload_android_studio_plugin()
 
 if __name__ == '__main__':
