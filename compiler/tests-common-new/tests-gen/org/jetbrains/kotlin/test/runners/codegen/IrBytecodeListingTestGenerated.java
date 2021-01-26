@@ -1985,6 +1985,12 @@ public class IrBytecodeListingTestGenerated extends AbstractIrBytecodeListingTes
         }
 
         @Test
+        @TestMetadata("privateInlineSamAdapter.kt")
+        public void testPrivateInlineSamAdapter() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeListing/sam/privateInlineSamAdapter.kt");
+        }
+
+        @Test
         @TestMetadata("reusedSamWrapperClasses.kt")
         public void testReusedSamWrapperClasses() throws Exception {
             runTest("compiler/testData/codegen/bytecodeListing/sam/reusedSamWrapperClasses.kt");
@@ -1994,6 +2000,12 @@ public class IrBytecodeListingTestGenerated extends AbstractIrBytecodeListingTes
         @TestMetadata("samAdapterAndInlinedOne.kt")
         public void testSamAdapterAndInlinedOne() throws Exception {
             runTest("compiler/testData/codegen/bytecodeListing/sam/samAdapterAndInlinedOne.kt");
+        }
+
+        @Test
+        @TestMetadata("samAdapterInInlineLambda.kt")
+        public void testSamAdapterInInlineLambda() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeListing/sam/samAdapterInInlineLambda.kt");
         }
 
         @Test
