@@ -7589,6 +7589,11 @@ public class FirBlackBoxCodegenTestGenerated extends AbstractFirBlackBoxCodegenT
                 KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/coroutines/inlineClasses"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
             }
 
+            @TestMetadata("genericParameterResult.kt")
+            public void testGenericParameterResult() throws Exception {
+                runTest("compiler/testData/codegen/box/coroutines/inlineClasses/genericParameterResult.kt");
+            }
+
             @TestMetadata("nonLocalReturn.kt")
             public void testNonLocalReturn() throws Exception {
                 runTest("compiler/testData/codegen/box/coroutines/inlineClasses/nonLocalReturn.kt");
