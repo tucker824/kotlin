@@ -188,7 +188,7 @@ extra["versions.kotlinx-collections-immutable-jvm"] = immutablesVersion
 extra["versions.ktor-network"] = "1.0.1"
 
 if (!project.hasProperty("versions.kotlin-native")) {
-    extra["versions.kotlin-native"] = "1.4.30-release-115"
+    extra["versions.kotlin-native"] = "1.4.31-release-146"
 }
 
 val intellijUltimateEnabled by extra(project.kotlinBuildProperties.intellijUltimateEnabled)
@@ -912,6 +912,7 @@ tasks {
                 ":prepare:ide-plugin-dependencies:sam-with-receiver-compiler-plugin-for-ide:publish",
                 ":prepare:ide-plugin-dependencies:compiler-components-for-jps:publish",
                 ":prepare:ide-plugin-dependencies:parcelize-compiler-plugin-for-ide:publish",
+                ":prepare:ide-plugin-dependencies:kotlin-stdlib-for-ide:publish",
                 ":kotlin-script-runtime:publish",
                 ":kotlin-script-util:publish",
                 ":kotlin-scripting-common:publish",
