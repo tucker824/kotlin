@@ -11,8 +11,9 @@ STORAGE_URL_PREFIX = "http://storage.googleapis.com"
 
 ROOT = os.path.abspath(os.path.normpath(os.path.join(__file__, '..', '..')))
 THIRD_PARTY = os.path.abspath(os.path.normpath(os.path.join(__file__, '..', 'third_party')))
-JDK_DIR = os.path.join(THIRD_PARTY, "jdk8", "linux-x86")
-JDK_9_DIR = os.path.join(THIRD_PARTY, "jdk9", "linux")
+JDK7_DIR = os.path.join(THIRD_PARTY, "jdk7", "java-se-7u75-ri")
+JDK8_DIR = os.path.join(THIRD_PARTY, "jdk8", "linux-x86")
+JDK9_DIR = os.path.join(THIRD_PARTY, "jdk9", "linux")
 BUNCH = os.path.join(THIRD_PARTY, "bunch-cli-1.1.0", "bin", "bunch")
 COMPILER_ZIP_NAME = "kotlin-compiler-%s.zip" % BUILD_VERSION
 COMPILER_ZIP_PATH = os.path.join(ROOT, "dist", COMPILER_ZIP_NAME)
@@ -52,13 +53,13 @@ def print_cmd(cmd, env=None, quiet=False):
   sys.stdout.flush()
 
 def get_java_env():
-  java_env = dict(os.environ, JAVA_HOME=JDK_DIR)
-  java_env['PATH'] = java_env['PATH'] + os.pathsep + os.path.join(JDK_DIR, 'bin')
+  java_env = dict(os.environ, JAVA_HOME=JDK8_DIR)
+  java_env['PATH'] = java_env['PATH'] + os.pathsep + os.path.join(JDK8_DIR, 'bin')
   java_env['GRADLE_OPTS'] = '-Xmx1g'
-  java_env['JDK_16'] = JDK_DIR
-  java_env['JDK_17'] = JDK_DIR
-  java_env['JDK_18'] = JDK_DIR
-  java_env['JDK_9'] = JDK_9_DIR
+  java_env['JDK_16'] = JDK7_DIR
+  java_env['JDK_17'] = JDK7_DIR
+  java_env['JDK_18'] = JDK8_DIR
+  java_env['JDK_9'] = JDK9_DIR
   return java_env
 
 def download_from_google_cloud_storage(sha1_file, bucket='r8-deps', auth=False):
@@ -71,6 +72,7 @@ def download_from_google_cloud_storage(sha1_file, bucket='r8-deps', auth=False):
   subprocess.check_call(cmd)
 
 def download_deps():
+  download_from_google_cloud_storage(os.path.join(THIRD_PARTY, "jdk7", "java-se-7u75-ri.tar.gz.sha1"))
   download_from_google_cloud_storage(os.path.join(THIRD_PARTY, "jdk8", "linux-x86.tar.gz.sha1"))
   download_from_google_cloud_storage(os.path.join(THIRD_PARTY, "jdk9", "linux.tar.gz.sha1"))
   download_from_google_cloud_storage(os.path.join(THIRD_PARTY, "bunch-cli-1.1.0.tar.gz.sha1"))
