@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 
-BUILD_VERSION = "1.4.31-google-ir-01"
+BUILD_VERSION = "1.4.31-google-ir-02"
 
 ARCHIVE_PREFIX = "r8-releases/kotlin-releases"
 STORAGE_URL_PREFIX = "http://storage.googleapis.com"
