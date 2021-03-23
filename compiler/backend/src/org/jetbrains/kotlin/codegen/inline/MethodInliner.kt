@@ -206,6 +206,10 @@ class MethodInliner(
                         ReifiedTypeInliner.putNeedClassReificationMarker(mv)
                         result.reifiedTypeParametersUsages.mergeAll(transformResult.reifiedTypeParametersUsages)
                     }
+
+                    for (classBuilder in childInliningContext.continuationBuilders.values) {
+                        classBuilder.done()
+                    }
                 } else {
                     result.addNotChangedClass(oldClassName)
                 }
