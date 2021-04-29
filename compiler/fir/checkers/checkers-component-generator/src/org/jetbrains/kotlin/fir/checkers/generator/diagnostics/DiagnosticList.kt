@@ -47,8 +47,8 @@ class DiagnosticBuilder(
 
     @OptIn(PrivateForInline::class, ExperimentalStdlibApi::class)
     inline fun <reified T> parameter(name: String) {
-        if (parameters.size == 3) {
-            error("Diagnostic cannot have more than 3 parameters")
+        if (parameters.size >= 4) {
+            error("Diagnostic cannot have more than 4 parameters")
         }
         parameters += DiagnosticParameter(
             name = name,
