@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.daemon.common
 
+import org.jetbrains.kotlin.incremental.DirtyData
 import org.jetbrains.kotlin.incremental.IncrementalModuleInfo
 import java.io.File
 import java.io.Serializable
@@ -52,6 +53,7 @@ class IncrementalCompilationOptions(
     val areFileChangesKnown: Boolean,
     val modifiedFiles: List<File>?,
     val deletedFiles: List<File>?,
+    val classpathChanges: DirtyData?,
     val workingDir: File,
     compilerMode: CompilerMode,
     targetPlatform: CompileService.TargetPlatform,

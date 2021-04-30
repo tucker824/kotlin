@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.build.report.metrics.BuildAttribute
 import org.jetbrains.kotlin.name.FqName
 
 internal sealed class ChangesEither {
-    internal class Known(
+    internal data class Known( // Temporary - ignore for now (data class so that we can compare objects)
         val lookupSymbols: Collection<LookupSymbol> = emptyList(),
         val fqNames: Collection<FqName> = emptyList()
     ) : ChangesEither()

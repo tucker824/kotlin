@@ -32,11 +32,17 @@ open class GeneratedFile(
 
 class GeneratedJvmClass(
     sourceFiles: Collection<File>,
-    outputFile: File
+    outputFile: File,
+    val outputClass: LocalFileKotlinClass
 ) : GeneratedFile(sourceFiles, outputFile) {
-    val outputClass = LocalFileKotlinClass.create(outputFile).sure {
-        "Couldn't load KotlinClass from $outputFile; it may happen because class doesn't have valid Kotlin annotations"
-    }
+
+    constructor(sourceFiles: Collection<File>, outputFile: File) : this(
+        sourceFiles,
+        outputFile,
+        LocalFileKotlinClass.create(outputFile).sure {
+            "Couldn't load KotlinClass from $outputFile; it may happen because class doesn't have valid Kotlin annotations"
+        }
+    )
 }
 
 fun File.isModuleMappingFile() = extension == ModuleMapping.MAPPING_FILE_EXT && parentFile.name == "META-INF"

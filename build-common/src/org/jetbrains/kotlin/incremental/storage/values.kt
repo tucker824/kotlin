@@ -28,4 +28,5 @@ data class LookupSymbolKey(val nameHash: Int, val scopeHash: Int) : Comparable<L
     }
 }
 
-data class ProtoMapValue(val isPackageFacade: Boolean, val bytes: ByteArray, val strings: Array<String>)
+data class ProtoMapValue(val isPackageFacade: Boolean, val bytes: ByteArray, val strings: Array<String>) :
+    java.io.Serializable // Temporary - remove later

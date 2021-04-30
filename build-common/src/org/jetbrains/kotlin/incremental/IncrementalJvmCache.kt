@@ -102,6 +102,12 @@ open class IncrementalJvmCache(
     fun isMultifileFacade(className: JvmClassName): Boolean =
         className in multifileFacadeToParts
 
+    fun getProtoMapValue(key: String) = protoMap.getValue(key) // Temporary - remove later
+
+    fun getConstantMapValue(key: String) = constantsMap.getValue(key) // Temporary - remove later
+
+    fun getInlineFunctionMapValue(key: String) = inlineFunctionsMap.getValue(key) // Temporary - remove later
+
     override fun getClassFilePath(internalClassName: String): String {
         return toSystemIndependentName(File(outputDir, "$internalClassName.class").canonicalPath)
     }

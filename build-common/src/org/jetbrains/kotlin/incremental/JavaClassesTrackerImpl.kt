@@ -103,7 +103,7 @@ class SerializedJavaClass(
         val proto: ProtoBuf.Class,
         val stringTable: ProtoBuf.StringTable,
         val qualifiedNameTable: ProtoBuf.QualifiedNameTable
-) {
+) : java.io.Serializable { // Temporary - remove later
     val classId: ClassId
         get() = NameResolverImpl(stringTable, qualifiedNameTable).getClassId(proto.fqName)
 }

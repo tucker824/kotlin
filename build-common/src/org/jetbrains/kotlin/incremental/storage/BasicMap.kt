@@ -39,6 +39,8 @@ abstract class BasicMap<K : Comparable<K>, V>(
         }
     }
 
+    fun getValue(key: K): V? = storage[key] // Temporary - ignore for now
+
     fun clean() {
         storage.clean()
     }

@@ -33,9 +33,11 @@ class LocalFileKotlinClass private constructor(
 
     companion object {
         fun create(file: File): LocalFileKotlinClass? {
-            val fileContents = file.readBytes()
-            return FileBasedKotlinClass.create(fileContents) {
-                className, classVersion, classHeader, innerClasses ->
+            return create(file, file.readBytes())
+        }
+
+        fun create(file: File, fileContents: ByteArray): LocalFileKotlinClass? {
+            return create(fileContents) { className, classVersion, classHeader, innerClasses ->
                 LocalFileKotlinClass(file, fileContents, className, classVersion, classHeader, innerClasses)
             }
         }

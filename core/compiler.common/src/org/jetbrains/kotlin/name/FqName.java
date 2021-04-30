@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.utils.StringsKt;
 
 import java.util.List;
 
-public final class FqName {
+public final class FqName implements java.io.Serializable { // Temporary - remove later
 
     @NotNull
     public static FqName fromSegments(@NotNull List<String> names) {

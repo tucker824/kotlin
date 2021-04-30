@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 /**
  * Like {@link FqName} but allows '<' and '>' characters in name.
  */
-public final class FqNameUnsafe {
+public final class FqNameUnsafe implements java.io.Serializable { // Temporary - remove later
     private static final Name ROOT_NAME = Name.special("<root>");
     private static final Pattern SPLIT_BY_DOTS = Pattern.compile("\\.");
 

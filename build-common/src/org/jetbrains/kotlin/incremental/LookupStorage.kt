@@ -227,7 +227,7 @@ class LookupTrackerImpl(private val delegate: LookupTracker) : LookupTracker {
     }
 }
 
-data class LookupSymbol(val name: String, val scope: String) : Comparable<LookupSymbol> {
+data class LookupSymbol(val name: String, val scope: String) : Comparable<LookupSymbol>, java.io.Serializable { // Temporary - remove later
     override fun compareTo(other: LookupSymbol): Int {
         val scopeCompare = scope.compareTo(other.scope)
         if (scopeCompare != 0) return scopeCompare

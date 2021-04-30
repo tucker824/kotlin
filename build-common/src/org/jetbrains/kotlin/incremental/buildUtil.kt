@@ -138,7 +138,7 @@ data class DirtyData(
     val dirtyLookupSymbols: Collection<LookupSymbol> = emptyList(),
     val dirtyClassesFqNames: Collection<FqName> = emptyList(),
     val dirtyClassesFqNamesForceRecompile: Collection<FqName> = emptyList()
-)
+) : java.io.Serializable // Temporary - ignore for now
 
 fun ChangesCollector.getDirtyData(
     caches: Iterable<IncrementalCacheCommon>,
