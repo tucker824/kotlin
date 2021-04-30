@@ -19,12 +19,13 @@ package org.jetbrains.kotlin.gradle.tasks
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
+import org.gradle.api.artifacts.transform.TransformParameters
+import org.gradle.api.artifacts.transform.TransformSpec
+import org.gradle.api.attributes.Attribute
 import org.gradle.api.tasks.TaskCollection
 import org.gradle.api.tasks.TaskProvider
-import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.PropertiesProvider
 import org.jetbrains.kotlin.gradle.plugin.mapKotlinTaskProperties
-import org.jetbrains.kotlin.gradle.plugin.mpp.AbstractKotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.KotlinCompilationData
 import org.jetbrains.kotlin.gradle.plugin.runOnceAfterEvaluated
 import org.jetbrains.kotlin.gradle.plugin.sources.applyLanguageSettingsToKotlinOptions
@@ -90,9 +91,25 @@ internal open class KotlinTasksProvider {
     ): TaskProvider<out KotlinCompile> {
         val properties = PropertiesProvider(project)
         val taskClass = taskOrWorkersTask<KotlinCompile, KotlinCompileWithWorkers>(properties)
-        val result = project.registerTask(name, taskClass) {
-            configureAction(it)
+
+        registerTransformsOnce(project)
+
+        val result = project.registerTask(name, taskClass) { kotlinCompile ->
+            configureAction(kotlinCompile)
+
+            val classpathSnapshotConfiguration = project.configurations.create("_classpath_snapshot_configuration_${kotlinCompile.name}")
+            project.dependencies.add(
+                classpathSnapshotConfiguration.name,
+                project.files(project.provider { kotlinCompile.compileClasspath })
+            )
+            kotlinCompile.classpathSnapshotFiles.from(
+                classpathSnapshotConfiguration.incoming.artifactView { viewConfig ->
+                    viewConfig.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, CLASSPATH_SNAPSHOT_ARTIFACT_TYPE)
+                }.files
+            )
+            kotlinCompile.classpathSnapshotDir.set(project.file("${project.buildDir}/kotlin/${kotlinCompile.name}/classpath-snapshot"))
         }
+
         configure(result, project, properties, compilation)
         return result
     }
@@ -158,6 +175,19 @@ internal open class KotlinTasksProvider {
         }
     }
 
+    private fun registerTransformsOnce(project: Project) {
+        if (project.extensions.extraProperties.has(TRANSFORMS_REGISTERED)) {
+            return
+        }
+        project.extensions.extraProperties[TRANSFORMS_REGISTERED] = true
+
+        project.dependencies.registerTransform(JarToJarSnapshotTransform::class.java) { spec: TransformSpec<TransformParameters.None> ->
+            // TODO The `from` artifact type needs to match the actual type used in compile classpath
+            spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, JAR_ARTIFACT_TYPE)
+            spec.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, CLASSPATH_SNAPSHOT_ARTIFACT_TYPE)
+        }
+    }
+
     private inline fun <reified Task, reified WorkersTask : Task> taskOrWorkersTask(properties: PropertiesProvider): Class<out Task> =
         if (properties.parallelTasksInProject != true) Task::class.java else WorkersTask::class.java
 }
@@ -175,3 +205,8 @@ internal class AndroidTasksProvider : KotlinTasksProvider() {
         }
     }
 }
+
+val ARTIFACT_TYPE_ATTRIBUTE: Attribute<String> = Attribute.of("artifactType", String::class.java)
+const val TRANSFORMS_REGISTERED = "kgp.internal.property.transforms.registered"
+const val JAR_ARTIFACT_TYPE = "jar"
+const val CLASSPATH_SNAPSHOT_ARTIFACT_TYPE = "jar-abi"

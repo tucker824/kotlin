@@ -44,6 +44,8 @@ import java.io.ObjectOutputStream
 import java.util.*
 import java.util.concurrent.Callable
 import javax.inject.Inject
+import org.jetbrains.kotlin.gradle.tasks.ARTIFACT_TYPE_ATTRIBUTE
+import org.jetbrains.kotlin.gradle.tasks.CLASSPATH_SNAPSHOT_ARTIFACT_TYPE
 
 // apply plugin: 'kotlin-kapt'
 class Kapt3GradleSubplugin @Inject internal constructor(private val registry: ToolingModelBuilderRegistry) :
@@ -654,10 +656,23 @@ class Kapt3GradleSubplugin @Inject internal constructor(private val registry: To
 
             kaptTask.stubsDir.set(getKaptStubsDir())
             kaptTask.setDestinationDir { getKaptIncrementalDataDir() }
-            kaptTask.mapClasspath { kaptTask.kotlinCompileTask.classpath }
+            kaptTask.mapClasspath { kaptTask.kotlinCompileTask.classpath } // FIXME This should be kotlinCompileTask.compileClasspath?
             kaptTask.generatedSourcesDirs = listOf(sourcesOutputDir, kotlinSourcesOutputDir)
 
             kaptTask.kaptClasspathConfigurations = kaptClasspathConfigurations
+
+            val classpathSnapshotConfiguration = project.configurations.create("_classpath_snapshot_configuration_${kaptTaskName}")
+            project.dependencies.add(
+                classpathSnapshotConfiguration.name,
+                project.files(project.provider { kaptTask.kotlinCompileTask.compileClasspath })
+            )
+            kaptTask.classpathSnapshotFiles.from(
+                classpathSnapshotConfiguration.incoming.artifactView { viewConfig ->
+                    viewConfig.attributes.attribute(
+                        ARTIFACT_TYPE_ATTRIBUTE, CLASSPATH_SNAPSHOT_ARTIFACT_TYPE)
+                }.files
+            )
+            kaptTask.classpathSnapshotDir.set(project.file("${project.buildDir}/kotlin/${kaptTask.name}/classpath-snapshot"))
 
             PropertiesProvider(project).mapKotlinTaskProperties(kaptTask)
 

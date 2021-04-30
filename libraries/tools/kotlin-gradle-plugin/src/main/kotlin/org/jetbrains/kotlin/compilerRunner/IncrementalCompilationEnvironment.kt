@@ -13,7 +13,7 @@ import java.io.Serializable
 
 internal class IncrementalCompilationEnvironment(
     val changedFiles: ChangedFiles,
-    val classpathChanges: DirtyData?,
+    val classpathChanges: DirtyData?, // Can also use org.jetbrains.kotlin.incremental.ChangesEither, which has clearer semantics and reasons why changes can't be computed
     val workingDir: File,
     val usePreciseJavaTracking: Boolean = false,
     val disableMultiModuleIC: Boolean = false,

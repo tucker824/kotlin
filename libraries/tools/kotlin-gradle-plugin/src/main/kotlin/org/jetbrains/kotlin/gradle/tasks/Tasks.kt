@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.gradle.tasks
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
@@ -31,6 +32,7 @@ import org.jetbrains.kotlin.compilerRunner.*
 import org.jetbrains.kotlin.compilerRunner.GradleCompilerRunner.Companion.normalizeForFlagFile
 import org.jetbrains.kotlin.daemon.common.MultiModuleICSettings
 import org.jetbrains.kotlin.gradle.dsl.*
+import org.jetbrains.kotlin.gradle.incremental.*
 import org.jetbrains.kotlin.gradle.incremental.ChangedFiles
 import org.jetbrains.kotlin.gradle.incremental.IncrementalModuleInfoBuildService
 import org.jetbrains.kotlin.gradle.incremental.IncrementalModuleInfoProvider
@@ -547,6 +549,14 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
 
     override fun getSourceRoots(): SourceRoots.ForJvm = jvmSourceRoots
 
+    // TODO Mark this as @InputFiles, and the actual classpath as @Internal
+    @get:Internal
+    internal val classpathSnapshotFiles: ConfigurableFileCollection = project.objects.fileCollection()
+
+    @get:OutputDirectory
+    @get:Optional
+    internal val classpathSnapshotDir: DirectoryProperty = project.objects.directoryProperty()
+
     override fun callCompilerAsync(args: K2JVMCompilerArguments, sourceRoots: SourceRoots, changedFiles: ChangedFiles) {
         sourceRoots as SourceRoots.ForJvm
 
@@ -554,10 +564,33 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
         val outputItemCollector = OutputItemsCollectorImpl()
         val compilerRunner = compilerRunner.get()
 
+        val currentClasspathSnapshotFiles = this.classpathSnapshotFiles.files.toList()
+        val classpathSnapshotDir = this.classpathSnapshotDir.get().asFile
+        val previousClasspathSnapshotDirs = classpathSnapshotDir.listFiles()?.toList()?.sortedBy { it.name.toInt() } ?: emptyList<File>()
+        val previousClasspathSnapshotFiles = previousClasspathSnapshotDirs.map { File(it, JAR_SNAPSHOT_FILE_NAME) }
+
+        // Read the current and previous classpath snapshots from disk
+        val currentClasspathSnapshot = ClasspathSnapshot(currentClasspathSnapshotFiles.map(ClasspathEntrySnapshot.Companion::readFromFile))
+        val previousClasspathSnapshot =
+            ClasspathSnapshot(previousClasspathSnapshotFiles.map(ClasspathEntrySnapshot.Companion::readFromFile))
+
+        // INCR_KOTLIN_COMPILE_BOOKMARK
+        // Step 2a [Gradle side]: Compute classpath snapshot changes
+        val classpathFiles = this.compileClasspath.toList()
+        val classpathChanges = if (classpathFiles.size == currentClasspathSnapshotFiles.size) {
+            ClasspathSnapshotDiffComputer(currentClasspathSnapshot, previousClasspathSnapshot).getChanges()
+        } else {
+            // TODO Report an error if the current classpath snapshot does not match the files on the actual classpath
+            null
+        }
+
+        // INCR_KOTLIN_COMPILE_BOOKMARK
+        // Step 3 [Gradle side]: Pass classpath snapshot changes to Kotlin compile daemon
         val icEnv = if (isIncrementalCompilationEnabled()) {
             logger.info(USING_JVM_INCREMENTAL_COMPILATION_MESSAGE)
             IncrementalCompilationEnvironment(
                 if (hasFilesInTaskBuildDirectory()) changedFiles else ChangedFiles.Unknown(),
+                classpathChanges,
                 taskBuildDirectory,
                 usePreciseJavaTracking = usePreciseJavaTracking,
                 disableMultiModuleIC = disableMultiModuleIC,
@@ -580,6 +613,11 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
             args,
             environment
         )
+
+        // Write the current classpath snapshots to disk
+        for ((index, file) in currentClasspathSnapshotFiles.withIndex()) {
+            file.copyTo(classpathSnapshotDir.resolve("$index").resolve(JAR_SNAPSHOT_FILE_NAME), overwrite = true)
+        }
     }
 
     @get:Input
@@ -830,6 +868,7 @@ open class Kotlin2JsCompile @Inject constructor(
             logger.info(USING_JS_INCREMENTAL_COMPILATION_MESSAGE)
             IncrementalCompilationEnvironment(
                 if (hasFilesInTaskBuildDirectory()) changedFiles else ChangedFiles.Unknown(),
+                null, // TODO Add classpath changes later
                 taskBuildDirectory,
                 multiModuleICSettings = multiModuleICSettings
             )

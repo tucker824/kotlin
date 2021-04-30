@@ -79,7 +79,8 @@ fun makeIncrementally(
             outputFiles = emptyList(),
             buildHistoryFile = buildHistoryFile,
             modulesApiHistory = EmptyModulesApiHistory,
-            kotlinSourceFilesExtensions = kotlinExtensions
+            kotlinSourceFilesExtensions = kotlinExtensions,
+            classpathChanges = null // TODO Add classpath changes later
         )
         compiler.compile(sourceFiles, args, messageCollector, providedChangedFiles = null)
     }
@@ -114,7 +115,8 @@ class IncrementalJvmCompilerRunner(
     buildHistoryFile: File,
     outputFiles: Collection<File>,
     private val modulesApiHistory: ModulesApiHistory,
-    override val kotlinSourceFilesExtensions: List<String> = DEFAULT_KOTLIN_SOURCE_FILES_EXTENSIONS
+    override val kotlinSourceFilesExtensions: List<String> = DEFAULT_KOTLIN_SOURCE_FILES_EXTENSIONS,
+    private val classpathChanges: DirtyData?
 ) : IncrementalCompilerRunner<K2JVMCompilerArguments, IncrementalJvmCachesManager>(
     workingDir,
     "caches-jvm",
@@ -184,8 +186,28 @@ class IncrementalJvmCompilerRunner(
         val lastBuildInfo = BuildInfo.read(lastBuildInfoFile) ?: return CompilationMode.Rebuild(BuildAttribute.NO_BUILD_HISTORY)
         reporter.reportVerbose { "Last Kotlin Build info -- $lastBuildInfo" }
 
+        // INCR_KOTLIN_COMPILE_BOOKMARK
+        // Step 5 [Kotlin daemon]: Use classpath snapshot changes for incremental Kotlin compile
+        // For debugging purposes, below we compare changes computed by the existing approach and the new approach.
         val classpathChanges = reporter.measure(BuildTime.IC_ANALYZE_CHANGES_IN_DEPENDENCIES) {
-            getClasspathChanges(args.classpathAsList, changedFiles, lastBuildInfo, modulesApiHistory, reporter)
+            // Old approach
+            val oldApproachResult = getClasspathChanges(args.classpathAsList, changedFiles, lastBuildInfo, modulesApiHistory, reporter)
+
+            // New approach
+            val newApproachResult = if (classpathChanges != null) {
+                ChangesEither.Known(classpathChanges.dirtyLookupSymbols, classpathChanges.dirtyClassesFqNames)
+            } else {
+                ChangesEither.Unknown(BuildAttribute.CACHE_CORRUPTION) // TODO Use a different enum later
+            }
+
+            if (oldApproachResult != newApproachResult) {
+                println(
+                    "Results differ.\n" +
+                            "Old approach result: $oldApproachResult\n" +
+                            "New approach result $newApproachResult"
+                )
+            }
+            oldApproachResult
         }
 
         @Suppress("UNUSED_VARIABLE") // for sealed when

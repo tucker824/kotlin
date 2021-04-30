@@ -594,6 +594,8 @@ abstract class CompileServiceImplBase(
 
         val projectRoot = incrementalCompilationOptions.modulesInfo.projectRoot
 
+        // INCR_KOTLIN_COMPILE_BOOKMARK
+        // Step 4 [Kotlin daemon]: Retrieve classpath snapshot changes from the Gradle side
         val compiler = IncrementalJvmCompilerRunner(
             workingDir,
             reporter,
@@ -601,7 +603,8 @@ abstract class CompileServiceImplBase(
             outputFiles = incrementalCompilationOptions.outputFiles,
             usePreciseJavaTracking = incrementalCompilationOptions.usePreciseJavaTracking,
             modulesApiHistory = modulesApiHistory,
-            kotlinSourceFilesExtensions = allKotlinExtensions
+            kotlinSourceFilesExtensions = allKotlinExtensions,
+            classpathChanges = incrementalCompilationOptions.classpathChanges
         )
         return try {
             compiler.compile(allKotlinFiles, k2jvmArgs, compilerMessageCollector, changedFiles, projectRoot)
