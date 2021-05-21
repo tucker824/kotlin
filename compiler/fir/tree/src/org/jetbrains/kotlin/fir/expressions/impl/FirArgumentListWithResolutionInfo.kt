@@ -8,9 +8,8 @@ package org.jetbrains.kotlin.fir.expressions.impl
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
-import org.jetbrains.kotlin.fir.types.ConeKotlinType
 
 interface FirArgumentListWithResolutionInfo {
     val mapping: LinkedHashMap<FirExpression, FirValueParameter>
-    val paramTypeSubstitutor: ConeSubstitutor?
+    val typeParameterSubstitutor: ConeSubstitutor
 }

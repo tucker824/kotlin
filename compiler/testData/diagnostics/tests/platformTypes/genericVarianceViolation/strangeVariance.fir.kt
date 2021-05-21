@@ -13,6 +13,6 @@ fun main(a: A, ml: MutableList<String>, l: List<String>) {
     a.foo(ml)
     a.foo(<!ARGUMENT_TYPE_MISMATCH!>l<!>)
 
-    a.bar(<!ARGUMENT_TYPE_MISMATCH!>ml<!>)
-    a.bar(<!ARGUMENT_TYPE_MISMATCH!>l<!>)
+    a.bar(<!JAVA_TYPE_MISMATCH!>ml<!>)
+    a.bar(l)
 }

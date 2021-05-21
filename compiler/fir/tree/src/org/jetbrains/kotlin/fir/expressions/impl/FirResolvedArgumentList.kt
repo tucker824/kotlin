@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.fir.visitors.transformSingle
 
 class FirResolvedArgumentList internal constructor(
     mapping: LinkedHashMap<FirExpression, FirValueParameter>,
-    override val paramTypeSubstitutor: ConeSubstitutor?
+    override val typeParameterSubstitutor: ConeSubstitutor
 ) : FirAbstractArgumentList(), FirArgumentListWithResolutionInfo {
 
     override var mapping: LinkedHashMap<FirExpression, FirValueParameter> = mapping

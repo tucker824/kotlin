@@ -51,8 +51,6 @@ import org.jetbrains.kotlin.resolve.calls.tower.isSuccess
 import org.jetbrains.kotlin.types.TypeApproximatorConfiguration
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 class FirCallCompletionResultsWriterTransformer(
     override val session: FirSession,
@@ -195,14 +193,14 @@ class FirCallCompletionResultsWriterTransformer(
                             buildPartiallyResolvedArgumentList(
                                 result.argumentList,
                                 it,
-                                subCandidate.paramTypeSubstitutor
+                                subCandidate.typeParameterSubstitutor
                             )
                         )
                     }
                 } else {
                     subCandidate.handleVarargs()
                     subCandidate.argumentMapping?.let {
-                        val newArgumentList = buildResolvedArgumentList(it, subCandidate.paramTypeSubstitutor)
+                        val newArgumentList = buildResolvedArgumentList(it, subCandidate.typeParameterSubstitutor)
                         val symbol = subCandidate.symbol
                         val functionIsInline =
                             (symbol as? FirNamedFunctionSymbol)?.fir?.isInline == true || symbol.isArrayConstructorWithLambda
@@ -278,14 +276,14 @@ class FirCallCompletionResultsWriterTransformer(
                     buildPartiallyResolvedArgumentList(
                         annotationCall.argumentList,
                         it,
-                        subCandidate.paramTypeSubstitutor
+                        subCandidate.typeParameterSubstitutor
                     )
                 )
             }
         } else {
             subCandidate.handleVarargs()
             subCandidate.argumentMapping?.let {
-                annotationCall.replaceArgumentList(buildResolvedArgumentList(it, subCandidate.paramTypeSubstitutor))
+                annotationCall.replaceArgumentList(buildResolvedArgumentList(it, subCandidate.typeParameterSubstitutor))
             }
         }
         return annotationCall
@@ -459,14 +457,14 @@ class FirCallCompletionResultsWriterTransformer(
                     buildPartiallyResolvedArgumentList(
                         delegatedConstructorCall.argumentList,
                         it,
-                        subCandidate.paramTypeSubstitutor
+                        subCandidate.typeParameterSubstitutor
                     )
                 )
             }
         } else {
             subCandidate.handleVarargs()
             subCandidate.argumentMapping?.let {
-                delegatedConstructorCall.replaceArgumentList(buildResolvedArgumentList(it, subCandidate.paramTypeSubstitutor))
+                delegatedConstructorCall.replaceArgumentList(buildResolvedArgumentList(it, subCandidate.typeParameterSubstitutor))
             }
         }
         return delegatedConstructorCall.transformCalleeReference(
@@ -796,7 +794,7 @@ class FirCallCompletionResultsWriterTransformer(
         }
     }
 
-    private val Candidate.paramTypeSubstitutor: ConeSubstitutor get() = substitutor.chain(finalSubstitutor)
+    private val Candidate.typeParameterSubstitutor: ConeSubstitutor get() = substitutor.chain(finalSubstitutor)
 }
 
 sealed class ExpectedArgumentType {

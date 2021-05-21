@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.fir.visitors.transformSingle
 class FirPartiallyResolvedArgumentList internal constructor(
     override var source: FirSourceElement?,
     private var _mapping: LinkedHashMap<FirExpression, FirValueParameter?>,
-    override val paramTypeSubstitutor: ConeSubstitutor?
+    override val typeParameterSubstitutor: ConeSubstitutor
 ) : FirArgumentList(), FirArgumentListWithResolutionInfo {
 
     @Suppress("UNCHECKED_CAST")

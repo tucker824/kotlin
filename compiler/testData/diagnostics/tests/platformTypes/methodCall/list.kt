@@ -15,5 +15,5 @@ fun test(ls: List<String>, mls: MutableList<String>, lsn: List<String?>, mlsn: M
     J().list(ls)
     J().list(mls)
     J().list(lsn)
-    J().list(mlsn)
+    J().list(<!JAVA_TYPE_MISMATCH!>mlsn<!>)
 }

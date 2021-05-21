@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.fir.expressions.impl.FirArraySetArgumentList
 import org.jetbrains.kotlin.fir.expressions.impl.FirPartiallyResolvedArgumentList
 import org.jetbrains.kotlin.fir.expressions.impl.FirResolvedArgumentList
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
-import org.jetbrains.kotlin.fir.types.ConeKotlinType
 
 fun buildUnaryArgumentList(argument: FirExpression): FirArgumentList = buildArgumentList {
     arguments += argument
@@ -27,18 +26,18 @@ fun buildArraySetArgumentList(rValue: FirExpression, indexes: List<FirExpression
 
 fun buildResolvedArgumentList(
     mapping: LinkedHashMap<FirExpression, FirValueParameter>,
-    paramTypeSubstitutor: ConeSubstitutor?
-): FirResolvedArgumentList = FirResolvedArgumentList(mapping, paramTypeSubstitutor)
+    typeParameterSubstitutor: ConeSubstitutor
+): FirResolvedArgumentList = FirResolvedArgumentList(mapping, typeParameterSubstitutor)
 
 fun buildPartiallyResolvedArgumentList(
     original: FirArgumentList,
     mapping: LinkedHashMap<FirExpression, FirValueParameter>,
-    paramTypeSubstitutor: ConeSubstitutor?
+    typeParameterSubstitutor: ConeSubstitutor
 ): FirArgumentList {
     return FirPartiallyResolvedArgumentList(
         original.source,
         original.arguments.map { key -> key to mapping[key] }.toMap(LinkedHashMap()),
-        paramTypeSubstitutor
+        typeParameterSubstitutor
     )
 }
 
