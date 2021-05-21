@@ -5,20 +5,21 @@
 
 package org.jetbrains.kotlin.fir.expressions.impl
 
-import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirAbstractArgumentList
 import org.jetbrains.kotlin.fir.expressions.FirArgumentList
 import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.visitors.FirTransformer
 import org.jetbrains.kotlin.fir.visitors.FirVisitor
 import org.jetbrains.kotlin.fir.visitors.transformSingle
 
 class FirResolvedArgumentList internal constructor(
-    mapping: LinkedHashMap<FirExpression, FirValueParameter>
-) : FirAbstractArgumentList() {
+    mapping: LinkedHashMap<FirExpression, FirValueParameter>,
+    override val paramTypeSubstitutor: ConeSubstitutor?
+) : FirAbstractArgumentList(), FirArgumentListWithResolutionInfo {
 
-    var mapping: LinkedHashMap<FirExpression, FirValueParameter> = mapping
+    override var mapping: LinkedHashMap<FirExpression, FirValueParameter> = mapping
         private set
 
     override val arguments: List<FirExpression>

@@ -9,19 +9,20 @@ import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirArgumentList
 import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.visitors.FirTransformer
 import org.jetbrains.kotlin.fir.visitors.FirVisitor
 import org.jetbrains.kotlin.fir.visitors.transformSingle
 
 class FirPartiallyResolvedArgumentList internal constructor(
     override var source: FirSourceElement?,
-    private var _mapping: LinkedHashMap<FirExpression, FirValueParameter?>
-) : FirArgumentList() {
+    private var _mapping: LinkedHashMap<FirExpression, FirValueParameter?>,
+    override val paramTypeSubstitutor: ConeSubstitutor?
+) : FirArgumentList(), FirArgumentListWithResolutionInfo {
 
     @Suppress("UNCHECKED_CAST")
-    val mapping: LinkedHashMap<FirExpression, FirValueParameter> =
+    override val mapping: LinkedHashMap<FirExpression, FirValueParameter> =
         _mapping.filterValues { it != null } as LinkedHashMap<FirExpression, FirValueParameter>
-
 
     override val arguments: List<FirExpression>
         get() = _mapping.keys.toList()

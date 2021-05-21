@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeUnresolvedReferenceError
 import org.jetbrains.kotlin.fir.resolve.inference.inferenceComponents
 import org.jetbrains.kotlin.fir.resolve.providers.getClassDeclaredPropertySymbols
+import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.resolve.symbolProvider
 import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.expectedConeType
@@ -571,7 +572,8 @@ private fun buildArgumentMapping(
             ?: return null
         argument.toFirExpression(session, javaTypeParameterStack, parameter.returnTypeRef) to parameter
     }
-    return buildResolvedArgumentList(mapping)
+    // Java annotation does not allow type parameters. So an empty substitutor is enough.
+    return buildResolvedArgumentList(mapping, ConeSubstitutor.Empty)
 }
 
 internal fun JavaAnnotation.toFirAnnotationCall(
