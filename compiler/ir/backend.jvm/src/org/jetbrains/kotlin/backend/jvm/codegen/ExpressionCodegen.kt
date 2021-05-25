@@ -1446,15 +1446,6 @@ class ExpressionCodegen(
         }
     }
 
-    override fun pushClosureOnStack(
-        classDescriptor: ClassDescriptor,
-        putThis: Boolean,
-        callGenerator: CallGenerator,
-        functionReferenceReceiver: StackValue?
-    ) {
-        //TODO
-    }
-
     override fun markLineNumberAfterInlineIfNeeded(registerLineNumberAfterwards: Boolean) {
         if (noLineNumberScope || registerLineNumberAfterwards) {
             if (lastLineNumber > -1) {
