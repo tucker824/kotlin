@@ -81,8 +81,15 @@ abstract class KtNamedClassOrObjectSymbol : KtClassOrObjectSymbol(),
     abstract override fun createPointer(): KtSymbolPointer<KtNamedClassOrObjectSymbol>
 }
 
-enum class KtClassKind {
-    CLASS, ENUM_CLASS, ENUM_ENTRY, ANNOTATION_CLASS, OBJECT, COMPANION_OBJECT, INTERFACE, ANONYMOUS_OBJECT
+enum class KtClassKind(val isObject: Boolean) {
+    CLASS(false),
+    ENUM_CLASS(false),
+    ENUM_ENTRY(false),
+    ANNOTATION_CLASS(false),
+    OBJECT(true),
+    COMPANION_OBJECT(true),
+    INTERFACE(false),
+    ANONYMOUS_OBJECT(true)
 }
 
 val KtClassKind.isObject
