@@ -124,14 +124,17 @@ class MainKtQuickFixRegistrar : KtQuickFixRegistrar() {
         registerApplicator(TypeMismatchFactories.assignmentTypeMismatch)
         registerApplicator(TypeMismatchFactories.initializerTypeMismatch)
 
-        // TODO: NON_EXHAUSTIVE_WHEN[_ON_SEALED_CLASS] will be replaced in future. We need to register the fix for those diagnostics as well
-        registerPsiQuickFixes(KtFirDiagnostic.NoElseInWhen::class, AddWhenElseBranchFix)
-
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeImplicitInvokeCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeInfixCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forUnsafeOperatorCall)
         registerApplicator(WrapWithSafeLetCallFixFactories.forArgumentTypeMismatch)
+    }
+
+    private val whenStatements = KtQuickFixesListBuilder.registerPsiQuickFix {
+        // TODO: NON_EXHAUSTIVE_WHEN[_ON_SEALED_CLASS] will be replaced in future. We need to register the fix for those diagnostics as well
+        registerPsiQuickFixes(KtFirDiagnostic.NoElseInWhen::class, AddWhenElseBranchFix)
+        registerApplicator(AddWhenRemainingBranchFixFactories.noElseInWhen)
     }
 
     private val returnTypes = KtQuickFixesListBuilder.registerPsiQuickFix {
@@ -146,6 +149,7 @@ class MainKtQuickFixRegistrar : KtQuickFixRegistrar() {
         imports,
         mutability,
         expressions,
+        whenStatements,
         returnTypes
     )
 }

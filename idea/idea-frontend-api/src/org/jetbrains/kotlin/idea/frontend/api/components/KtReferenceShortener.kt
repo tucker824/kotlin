@@ -9,6 +9,7 @@ import com.intellij.openapi.util.TextRange
 import org.jetbrains.kotlin.idea.frontend.api.symbols.KtCallableSymbol
 import org.jetbrains.kotlin.idea.frontend.api.symbols.KtClassOrObjectSymbol
 import org.jetbrains.kotlin.idea.frontend.api.symbols.KtEnumEntrySymbol
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 
 enum class ShortenOption {
@@ -35,22 +36,40 @@ abstract class KtReferenceShortener : KtAnalysisSessionComponent() {
 }
 
 interface KtReferenceShortenerMixIn : KtAnalysisSessionMixIn {
-    fun collectPossibleReferenceShortenings(
-        file: KtFile,
-        selection: TextRange = file.textRange,
-        classShortenOption: (KtClassOrObjectSymbol) -> ShortenOption = {
+    companion object {
+        private val defaultClassShortenOption: (KtClassOrObjectSymbol) -> ShortenOption = {
             if (it.classIdIfNonLocal?.isNestedClass == true) {
                 ShortenOption.SHORTEN_IF_ALREADY_IMPORTED
             } else {
                 ShortenOption.SHORTEN_AND_IMPORT
             }
-        },
-        callableShortenOption: (KtCallableSymbol) -> ShortenOption = { symbol ->
+        }
+
+        private val defaultCallableShortenOption: (KtCallableSymbol) -> ShortenOption = { symbol ->
             if (symbol is KtEnumEntrySymbol) ShortenOption.DO_NOT_SHORTEN
             else ShortenOption.SHORTEN_AND_IMPORT
         }
+    }
+
+    fun collectPossibleReferenceShortenings(
+        file: KtFile,
+        selection: TextRange = file.textRange,
+        classShortenOption: (KtClassOrObjectSymbol) -> ShortenOption = defaultClassShortenOption,
+        callableShortenOption: (KtCallableSymbol) -> ShortenOption = defaultCallableShortenOption
     ): ShortenCommand =
         analysisSession.referenceShortener.collectShortenings(file, selection, classShortenOption, callableShortenOption)
+
+    fun collectPossibleReferenceShorteningsInElement(
+        element: KtElement,
+        classShortenOption: (KtClassOrObjectSymbol) -> ShortenOption = defaultClassShortenOption,
+        callableShortenOption: (KtCallableSymbol) -> ShortenOption = defaultCallableShortenOption
+    ): ShortenCommand =
+        analysisSession.referenceShortener.collectShortenings(
+            element.containingKtFile,
+            element.textRange,
+            classShortenOption,
+            callableShortenOption
+        )
 }
 
 interface ShortenCommand {

@@ -6,6 +6,8 @@
 package org.jetbrains.kotlin.idea.frontend.api.components
 
 import org.jetbrains.kotlin.builtins.StandardNames
+import org.jetbrains.kotlin.idea.frontend.api.symbols.KtClassOrObjectSymbol
+import org.jetbrains.kotlin.idea.frontend.api.symbols.KtTypeAliasSymbol
 import org.jetbrains.kotlin.idea.frontend.api.types.KtClassType
 import org.jetbrains.kotlin.idea.frontend.api.types.KtType
 import org.jetbrains.kotlin.idea.frontend.api.types.KtTypeNullability
@@ -39,6 +41,18 @@ interface KtTypeInfoProviderMixIn : KtAnalysisSessionMixIn {
     val KtType.isBoolean: Boolean get() = isClassTypeWithClassId(DefaultTypeClassIds.BOOLEAN)
     val KtType.isString: Boolean get() = isClassTypeWithClassId(DefaultTypeClassIds.STRING)
     val KtType.isAny: Boolean get() = isClassTypeWithClassId(DefaultTypeClassIds.ANY)
+
+    /** Gets the class symbol backing the given type, if available. */
+    val KtType.expandedClassSymbol: KtClassOrObjectSymbol?
+        get() {
+            return when (this) {
+                is KtClassType -> when (val classSymbol = classSymbol) {
+                    is KtClassOrObjectSymbol -> classSymbol
+                    is KtTypeAliasSymbol -> classSymbol.expandedType.expandedClassSymbol
+                }
+                else -> null
+            }
+        }
 
     val KtType.isUInt: Boolean get() = isClassTypeWithClassId(StandardNames.FqNames.uInt)
     val KtType.isULong: Boolean get() = isClassTypeWithClassId(StandardNames.FqNames.uLong)
