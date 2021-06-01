@@ -83,6 +83,7 @@ internal class KtFirSyntheticJavaPropertySymbol(
     override val javaSetterName: Name? get() = firRef.withFir { it.setter?.delegate?.name }
 
     override val isOverride: Boolean get() = firRef.withFir { it.isOverride }
+    override val isStatic: Boolean get() = false
 
     override val hasSetter: Boolean get() = firRef.withFir { it.setter != null }
 
