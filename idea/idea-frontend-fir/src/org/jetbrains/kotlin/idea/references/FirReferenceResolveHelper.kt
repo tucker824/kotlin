@@ -38,6 +38,7 @@ import org.jetbrains.kotlin.idea.frontend.api.fir.KtSymbolByFirBuilder
 import org.jetbrains.kotlin.idea.frontend.api.fir.buildSymbol
 import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.KtFirPackageSymbol
 import org.jetbrains.kotlin.idea.frontend.api.symbols.KtSymbol
+import org.jetbrains.kotlin.idea.search.fqNameSegments
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -69,7 +70,7 @@ internal object FirReferenceResolveHelper {
     private fun ClassId.toTargetPsi(
         session: FirSession,
         symbolBuilder: KtSymbolByFirBuilder,
-        calleeReference: FirReference? = null
+        calleeReference: FirReference? = null,
     ): KtSymbol? {
         val classLikeDeclaration = ConeClassLikeLookupTagImpl(this).toSymbol(session)?.fir
         if (classLikeDeclaration is FirRegularClass) {
@@ -178,7 +179,7 @@ internal object FirReferenceResolveHelper {
         return when (fir) {
             is FirResolvedTypeRef -> getSymbolsForResolvedTypeRef(fir, expression, session, symbolBuilder)
             is FirResolvedQualifier ->
-                getSymbolsForResolvedQualifier(fir, expression, session, symbolBuilder, analysisSession)
+                getSymbolsForResolvedQualifier(fir, expression, session, symbolBuilder)
             is FirAnnotationCall -> getSymbolsForAnnotationCall(fir, session, symbolBuilder)
             is FirResolvedImport -> getSymbolsByResolvedImport(expression, symbolBuilder, fir, session)
             is FirFile -> getSymbolsByFirFile(expression, symbolBuilder, fir)
@@ -374,42 +375,104 @@ internal object FirReferenceResolveHelper {
         fir: FirResolvedQualifier,
         expression: KtSimpleNameExpression,
         session: FirSession,
-        symbolBuilder: KtSymbolByFirBuilder,
-        analysisSession: KtFirAnalysisSession
+        symbolBuilder: KtSymbolByFirBuilder
     ): Collection<KtSymbol> {
-        // TODO refactor that block
-        val classId = fir.classId ?: return listOfNotNull(getPackageSymbolFor(expression, symbolBuilder, forQualifiedType = false))
-
-        var parent = expression.parent as? KtDotQualifiedExpression
-        // Distinguish A.foo() from A(.Companion).foo()
-        // Make expression.parent as? KtDotQualifiedExpression local function
-        while (parent != null) {
-            val selectorExpression = parent.selectorExpression ?: break
-            if (selectorExpression === expression) {
-                parent = parent.parent as? KtDotQualifiedExpression
-                continue
-            }
-            val receiverClassId = if (parent.receiverExpression == expression) {
-                /*
-                 * <caret>A.Named.i -> class A
-                 */
-                val name = fir.relativeClassFqName?.pathSegments()?.firstOrNull()
-                name?.let { ClassId(fir.packageFqName, it) }
-            } else null
-            val parentFir = selectorExpression.getOrBuildFir(analysisSession.firResolveState)
-            when {
-                parentFir is FirQualifiedAccess -> {
-                    return listOfNotNull(
-                        (receiverClassId ?: classId).toTargetPsi(session, symbolBuilder, parentFir.calleeReference)
-                    )
-                }
-                receiverClassId != null -> {
-                    return listOfNotNull(receiverClassId.toTargetPsi(session, symbolBuilder))
-                }
-                else -> parent = parent.parent as? KtDotQualifiedExpression
-            }
+        val referencedSymbol = if (fir.resolveToCompanionObject) {
+            (fir.symbol?.fir as? FirRegularClass)?.companionObject?.symbol
+        } else {
+            fir.symbol
         }
-        return listOfNotNull(classId.toTargetPsi(session, symbolBuilder))
+        if (referencedSymbol == null) {
+            // If referencedSymbol is null, it means the reference goes to a package.
+            val parent = expression.parent as? KtDotQualifiedExpression ?: return emptyList()
+            val fqNameSegments =
+                when (expression) {
+                    parent.selectorExpression -> parent.fqNameSegments() ?: return emptyList()
+                    parent.receiverExpression -> listOf(expression.getReferencedName())
+                    else -> return emptyList()
+                }
+            return listOfNotNull(symbolBuilder.createPackageSymbolIfOneExists(FqName.fromSegments(fqNameSegments)))
+        }
+        val referencedClass = referencedSymbol.fir
+        val referencedSymbolsByFir = listOfNotNull(symbolBuilder.buildSymbol(referencedClass))
+        if (fir.source.psi === expression) return referencedSymbolsByFir
+
+        if (referencedClass.isLocal) {
+            // TODO: handle local classes after KT-47135 is fixed
+            return referencedSymbolsByFir
+        } else {
+            // In the code below, we always maintain the contract that `classId` and `qualifiedAccess` should stay "in-sync", i.e. they
+            // refer to the same class.
+            var qualifiedAccess = fir.source.psi?.let {
+                // In some cases, the source from FIR is a KtDotQualifiedExpression and in some other cases, it's the selectorExpression of
+                // a KtDotQualifiedExpression
+                it as? KtDotQualifiedExpression ?: it.parent as? KtDotQualifiedExpression
+            } ?: return referencedSymbolsByFir
+            var classId =
+                if ((referencedClass as? FirRegularClass)?.isCompanion == true &&
+                    (qualifiedAccess.selectorExpression as? KtNameReferenceExpression)?.getReferencedName() != "Companion"
+                ) {
+                    // Remove the last "Companion" part if the qualified access does not contain it. This is needed because the "Companion"
+                    // part is optional.
+                    referencedClass.classId.outerClassId ?: return referencedSymbolsByFir
+                } else {
+                    referencedClass.classId
+                }
+            val qualifiedAccessSegments = qualifiedAccess.fqNameSegments() ?: return referencedSymbolsByFir
+            assert(classId.asSingleFqName().pathSegments().takeLast(qualifiedAccessSegments.size)
+                       .map { it.identifierOrNullIfSpecial } == qualifiedAccessSegments) {
+                "Referenced classId $classId should end with qualifiedAccess expression ${qualifiedAccess.text} "
+            }
+
+            // Handle nested classes.
+            while (true) {
+                if (expression === qualifiedAccess.selectorExpression) {
+                    return listOfNotNull(classId.toTargetPsi(session, symbolBuilder))
+                }
+                val outerClassId = classId.outerClassId
+                val receiverExpression = qualifiedAccess.receiverExpression
+                if (receiverExpression !is KtDotQualifiedExpression) {
+                    // If the receiver is not a KtDotQualifiedExpression, it means we are hitting the end of nested receivers.
+                    if (receiverExpression == expression) {
+                        // If there is still an outer class, then return symbol of that class
+                        outerClassId?.let { return listOfNotNull(it.toTargetPsi(session, symbolBuilder)) }
+                        // Otherwise, it should be a package, so we return that
+                        return listOfNotNull(symbolBuilder.createPackageSymbolIfOneExists(classId.packageFqName))
+                    } else {
+                        // This is unexpected. The code probably contains some weird structures. In this case, we just fail the resolution
+                        // with zero results.
+                        return emptyList()
+                    }
+                }
+                qualifiedAccess = receiverExpression
+                if (outerClassId == null) break
+                classId = outerClassId
+            }
+
+            // Handle package names
+            var packageFqName = classId.packageFqName
+
+            while (!packageFqName.isRoot) {
+                if (expression === qualifiedAccess.selectorExpression) {
+                    return listOfNotNull(symbolBuilder.createPackageSymbolIfOneExists(packageFqName))
+                }
+                val parentPackageFqName = packageFqName.parent()
+                val receiverExpression = qualifiedAccess.receiverExpression
+                if (receiverExpression !is KtDotQualifiedExpression) {
+                    // If the receiver is not a KtDotQualifiedExpression, it means we are hitting the end of nested receivers.
+                    if (receiverExpression == expression) {
+                        return listOfNotNull(symbolBuilder.createPackageSymbolIfOneExists(parentPackageFqName))
+                    } else {
+                        // This is unexpected. The code probably contains some weird structures. In this case, we just fail the resolution
+                        // with zero results.
+                        return emptyList()
+                    }
+                }
+                qualifiedAccess = receiverExpression
+                packageFqName = parentPackageFqName
+            }
+            return referencedSymbolsByFir
+        }
     }
 
     private fun getSymbolsForAnnotationCall(
