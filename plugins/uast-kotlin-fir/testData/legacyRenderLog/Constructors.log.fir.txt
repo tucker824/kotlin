@@ -46,7 +46,9 @@ UFile (package = )
             UBlockExpression
                 [!] UnknownKotlinExpression (BINARY_EXPRESSION)
                 [!] UnknownKotlinExpression (PROPERTY)
-                [!] UnknownKotlinExpression (DOT_QUALIFIED_EXPRESSION)
+                UQualifiedReferenceExpression
+                    [!] UnknownKotlinExpression (REFERENCE_EXPRESSION)
+                    [!] UnknownKotlinExpression (CALL_EXPRESSION)
         UMethod (name = getA)
         UMethod (name = setA)
             UParameter (name = value)

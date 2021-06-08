@@ -296,6 +296,8 @@ internal object FirKotlinConverter : BaseKotlinConverter {
 
                 is KtArrayAccessExpression -> expr<UArrayAccessExpression>(build(::FirKotlinUArrayAccessExpression))
 
+                is KtDotQualifiedExpression -> expr<UQualifiedReferenceExpression>(build(::KotlinUQualifiedReferenceExpression))
+
                 else -> expr<UExpression>(build(::UnknownKotlinExpression))
             }
         }
