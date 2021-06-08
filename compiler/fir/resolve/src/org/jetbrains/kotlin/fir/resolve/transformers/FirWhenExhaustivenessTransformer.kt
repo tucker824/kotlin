@@ -47,7 +47,7 @@ class FirWhenExhaustivenessTransformer(private val bodyResolveComponents: BodyRe
     @OptIn(ExperimentalStdlibApi::class)
     private fun processExhaustivenessCheck(whenExpression: FirWhenExpression) {
         if (whenExpression.branches.any { it.condition is FirElseIfTrueCondition }) {
-            whenExpression.replaceExhaustivenessStatus(ExhaustivenessStatus.Exhaustive)
+            whenExpression.replaceExhaustivenessStatus(ExhaustivenessStatus.ProperlyExhaustive)
             return
         }
 
@@ -60,6 +60,12 @@ class FirWhenExhaustivenessTransformer(private val bodyResolveComponents: BodyRe
 
         val session = bodyResolveComponents.session
         val cleanSubjectType = subjectType.fullyExpandedType(session).lowerBoundIfFlexible()
+
+        if (whenExpression.branches.isEmpty() && cleanSubjectType.isNothing) {
+            whenExpression.replaceExhaustivenessStatus(ExhaustivenessStatus.TriviallyExhaustive)
+            return
+        }
+
         val unwrappedIntersectionTypes = (cleanSubjectType as? ConeIntersectionType)?.intersectedTypes ?: listOf(cleanSubjectType)
 
 
@@ -68,7 +74,7 @@ class FirWhenExhaustivenessTransformer(private val bodyResolveComponents: BodyRe
         for (unwrappedSubjectType in unwrappedIntersectionTypes) {
             val localStatus = computeStatusForNonIntersectionType(unwrappedSubjectType, session, whenExpression)
             when {
-                localStatus === ExhaustivenessStatus.Exhaustive -> {
+                localStatus === ExhaustivenessStatus.ProperlyExhaustive -> {
                     status = localStatus
                     break
                 }
@@ -87,7 +93,7 @@ class FirWhenExhaustivenessTransformer(private val bodyResolveComponents: BodyRe
         session: FirSession,
         whenExpression: FirWhenExpression,
     ): ExhaustivenessStatus {
-        val checkers = buildList<WhenExhaustivenessChecker> {
+        val checkers = buildList {
             exhaustivenessCheckers.filterTo(this) { it.isApplicable(unwrappedSubjectType, session) }
             if (isNotEmpty() && unwrappedSubjectType.isMarkedNullable) {
                 add(WhenOnNullableExhaustivenessChecker)
@@ -107,7 +113,7 @@ class FirWhenExhaustivenessTransformer(private val bodyResolveComponents: BodyRe
         }
 
         return if (whenMissingCases.isEmpty()) {
-            ExhaustivenessStatus.Exhaustive
+            ExhaustivenessStatus.ProperlyExhaustive
         } else {
             ExhaustivenessStatus.NotExhaustive(whenMissingCases)
         }
