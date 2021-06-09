@@ -516,6 +516,7 @@ object NodeConfigurator : AbstractFieldConfigurator<FirTreeBuilder>(FirTreeBuild
             +field("classId", classIdType, nullable = true)
             +field("symbol", classLikeSymbolType, nullable = true)
             +booleanField("isNullableLHSForCallableReference", withReplace = true)
+            +booleanField("resolveToCompanionObject", withReplace = true)
             +typeArguments.withTransform()
         }
 

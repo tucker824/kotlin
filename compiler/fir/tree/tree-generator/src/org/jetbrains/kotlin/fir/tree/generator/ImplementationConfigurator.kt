@@ -469,6 +469,18 @@ object ImplementationConfigurator : AbstractFirTreeImplementationConfigurator() 
             useTypes(expressionType)
         }
 
+        impl(resolvedQualifier) {
+            // Initialize the value to true if only the companion object is present. This makes standalone class reference expressions
+            // correctly resolve to the companion object. If it's a receiver expression of some other qualified access, the value is later
+            // corrected.
+            default("resolveToCompanionObject", "(symbol?.fir as? FirRegularClass)?.companionObject != null")
+            useTypes(regularClass)
+        }
+
+        impl(errorResolvedQualifier) {
+            defaultFalse("resolveToCompanionObject", withGetter = true)
+        }
+
         noImpl(userTypeRef)
     }
 
