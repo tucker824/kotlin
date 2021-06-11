@@ -17,6 +17,9 @@ import org.jetbrains.kotlin.fir.types.impl.FirImplicitBuiltinTypeRef
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitIntTypeRef
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.convertConstantExpression
 import org.jetbrains.kotlin.idea.frontend.api.symbols.markers.KtSimpleConstantValue
+import org.jetbrains.kotlin.resolve.constants.evaluate.CompileTimeType
+import org.jetbrains.kotlin.resolve.constants.evaluate.evalBinaryOp
+import org.jetbrains.kotlin.resolve.constants.evaluate.evalUnaryOp
 import org.jetbrains.kotlin.types.ConstantValueKind
 
 /**
@@ -33,47 +36,23 @@ internal class FirCompileTimeConstantEvaluator {
             else -> null
         }
 
+    // TODO: Rework to handle nested expressions
+    //  This is no longer used during FIR2IR where an inner expression is recursively written to ConstExpression if possible.
+    //  Maybe rewrite this to a recursive version with caching either here or in provider.
     private fun evaluate(functionCall: FirFunctionCall): FirConstExpression<*>? {
-        if (!functionCall.isNumericOperatorCall) {
-            return null
-        }
         val function = functionCall.getOriginalFunction()!! as FirSimpleFunction
 
-        @Suppress("UNCHECKED_CAST")
-        val opr1 = functionCall.explicitReceiver!! as FirConstExpression<out Number>
-        if (function.name.asString() in unaryOperatorNames) {
-            opr1.evaluate(function)?.let {
-                return it.adjustType(functionCall.typeRef)
-            }
-            return null
-        }
-        assert(function.name.asString() in binaryOperatorNames) {
-            "Inconsistency in isNumericOperatorCall and operator names: ${function.name.asString()}."
+        val opr1 = functionCall.explicitReceiver as? FirConstExpression<*> ?: return null
+        opr1.evaluate(function)?.let {
+            return it.adjustType(functionCall.typeRef)
         }
 
-        @Suppress("UNCHECKED_CAST")
-        val opr2 = functionCall.argument as FirConstExpression<out Number>
+        val opr2 = functionCall.argument as? FirConstExpression<*> ?: return null
         opr1.evaluate(function, opr2)?.let {
             return it.adjustType(functionCall.typeRef)
         }
         return null
     }
-
-    private val FirFunctionCall.isNumericOperatorCall: Boolean
-        get() {
-            val function = getOriginalFunction() ?: return false
-            return typeRef.toConstantValueKind() != null &&
-                    // LHS is const expression with numeric constant value.
-                    explicitReceiver != null && explicitReceiver!!.isNumericConst &&
-                    function is FirSimpleFunction &&
-                    // Either unary operator (which doesn't need RHS) or RHS is also const expression with numeric constant value.
-                    ((function.name.asString() in unaryOperatorNames && arguments.isEmpty()) ||
-                            (function.name.asString() in binaryOperatorNames && arguments.size == 1 && argument.isNumericConst))
-        }
-
-    private val FirExpression.isNumericConst: Boolean
-        get() =
-            this is FirConstExpression<*> && typedValue is Number
 
     private fun FirConstExpression<*>.adjustType(expectedType: FirTypeRef): FirConstExpression<*> {
         val expectedKind = expectedType.toConstantValueKind()
@@ -97,30 +76,48 @@ internal class FirCompileTimeConstantEvaluator {
         }
     }
 
+    private fun <T> ConstantValueKind<T>.toCompileTimeType(): CompileTimeType {
+        return when (this) {
+            ConstantValueKind.Byte -> CompileTimeType.BYTE
+            ConstantValueKind.Short -> CompileTimeType.SHORT
+            ConstantValueKind.Int -> CompileTimeType.INT
+            ConstantValueKind.Long -> CompileTimeType.LONG
+            ConstantValueKind.Double -> CompileTimeType.DOUBLE
+            ConstantValueKind.Float -> CompileTimeType.FLOAT
+            ConstantValueKind.Char -> CompileTimeType.CHAR
+            ConstantValueKind.Boolean -> CompileTimeType.BOOLEAN
+            ConstantValueKind.String -> CompileTimeType.STRING
+
+            else -> CompileTimeType.BYTE
+        }
+    }
+
     // Unary operators
-    private fun FirConstExpression<out Number>.evaluate(function: FirSimpleFunction): FirConstExpression<out Number>? {
-        val f = unaryOperations[UnaryOperationKey(kind, function.name.asString())] ?: return null
-        // TODO: need some systematic check, e.g., integer overflow
-        return try {
-            val r = f(typedValue)
-            r.toConstantValueKind()!!.toConstExpression(source, r)
-        } catch (e: Exception) {
-            null
+    private fun FirConstExpression<*>.evaluate(function: FirSimpleFunction): FirConstExpression<*>? {
+        if (value == null) return null
+        return evalUnaryOp(
+            function.name.asString(),
+            kind.toCompileTimeType(),
+            value!!
+        )?.let {
+            it.toConstantValueKind()?.toConstExpression(source, it)
         }
     }
 
     // Binary operators
-    private fun FirConstExpression<out Number>.evaluate(
+    private fun FirConstExpression<*>.evaluate(
         function: FirSimpleFunction,
-        other: FirConstExpression<out Number>
-    ): FirConstExpression<out Number>? {
-        val f = binaryOperations[BinaryOperationKey(kind, other.kind, function.name.asString())] ?: return null
-        // TODO: need some systematic check, e.g., div by zero (1 / 0 v.s. 1 / 0.f)
-        return try {
-            val r = f(typedValue, other.typedValue)
-            r.toConstantValueKind()!!.toConstExpression(source, r)
-        } catch (e: Exception) {
-            null
+        other: FirConstExpression<*>
+    ): FirConstExpression<*>? {
+        if (value == null || other.value == null) return null
+        return evalBinaryOp(
+            function.name.asString(),
+            kind.toCompileTimeType(),
+            value!!,
+            other.kind.toCompileTimeType(),
+            other.value!!
+        )?.let {
+            it.toConstantValueKind()?.toConstExpression(source, it)
         }
     }
 
@@ -156,7 +153,8 @@ internal class FirCompileTimeConstantEvaluator {
             is ConeIntegerLiteralType -> null
         }
 
-    private fun <T : Number> T.toConstantValueKind(): ConstantValueKind<out Number>? =
+    // TODO: better to remove `out Number` restriction
+    private fun <T : Any> T.toConstantValueKind(): ConstantValueKind<out Number>? =
         when (this) {
             is Byte -> ConstantValueKind.Byte
             is Double -> ConstantValueKind.Double
@@ -182,26 +180,12 @@ internal class FirCompileTimeConstantEvaluator {
         }
     }
 
-    private fun <T : Number> ConstantValueKind<T>.toConstExpression(source: FirSourceElement?, value: Number): FirConstExpression<T> =
+    private fun <T : Any> ConstantValueKind<T>.toConstExpression(source: FirSourceElement?, value: Any): FirConstExpression<T> =
         @Suppress("UNCHECKED_CAST")
         buildConstExpression(source, this, value as T)
 }
 
-val <T> FirConstExpression<T>.typedValue: T
-    @Suppress("UNCHECKED_CAST")
-    get() =
-        (value as? Long)?.let {
-            when (kind) {
-                ConstantValueKind.Byte -> it.toByte()
-                ConstantValueKind.Short -> it.toShort()
-                ConstantValueKind.Int -> it.toInt()
-                ConstantValueKind.Float -> it.toFloat()
-                ConstantValueKind.Double -> it.toDouble()
-                else -> it
-            }
-        } as T ?: value
-
-fun FirFunctionCall.getOriginalFunction(): FirCallableDeclaration<*>? {
+private fun FirFunctionCall.getOriginalFunction(): FirCallableDeclaration<*>? {
     val symbol: AbstractFirBasedSymbol<*>? = when (val reference = calleeReference) {
         is FirResolvedNamedReference -> reference.resolvedSymbol
         // is FirNamedReferenceWithCandidate -> reference.candidateSymbol
