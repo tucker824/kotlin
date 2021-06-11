@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.utils.Printer
 import java.io.File
 
-val FIR_DEST_FILE: File = File("compiler/fir/evaluate/src/org/jetbrains/kotlin/fir/evaluate/FirOperationsMapGenerated.kt")
+val FIR_DEST_FILE: File = File("idea/idea-frontend-fir/src/org/jetbrains/kotlin/idea/fir/evaluate/FirOperationsMapGenerated.kt")
 private val EXCLUDED_FUNCTIONS: List<String> = listOf(
     "not", "toChar", "toString",
     "and", "or", "xor", "shl", "shr", "ushr",
@@ -30,7 +30,7 @@ fun generateFirMap(): String {
 
     p.println(
         """
-        |package org.jetbrains.kotlin.fir.evaluate
+        |package org.jetbrains.kotlin.idea.fir.evaluate
         |
         |import org.jetbrains.kotlin.fir.expressions.FirConstKind
         |
