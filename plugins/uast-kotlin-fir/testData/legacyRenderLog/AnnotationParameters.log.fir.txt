@@ -3,7 +3,7 @@ UFile (package = )
         UMethod (name = foo)
             UBlockExpression
                 UReturnExpression
-                    ULiteralExpression (value = "not-yet-compile-time-constant")
+                    ULiteralExpression (value = 5)
         UMethod (name = bar)
             UBlockExpression
                 UReturnExpression
@@ -11,11 +11,11 @@ UFile (package = )
         UMethod (name = fooWithArrLiteral)
             UBlockExpression
                 UReturnExpression
-                    ULiteralExpression (value = "not-yet-compile-time-constant")
+                    ULiteralExpression (value = 5)
         UMethod (name = fooWithStrArrLiteral)
             UBlockExpression
                 UReturnExpression
-                    ULiteralExpression (value = "not-yet-compile-time-constant")
+                    ULiteralExpression (value = 3)
     UClass (name = IntRange)
         UMethod (name = from)
         UMethod (name = to)

@@ -15,7 +15,8 @@ import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitBuiltinTypeRef
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitIntTypeRef
-import org.jetbrains.kotlin.resolve.constants.ConstantValue
+import org.jetbrains.kotlin.idea.frontend.api.fir.utils.convertConstantExpression
+import org.jetbrains.kotlin.idea.frontend.api.symbols.markers.KtSimpleConstantValue
 import org.jetbrains.kotlin.types.ConstantValueKind
 
 /**
@@ -25,10 +26,10 @@ import org.jetbrains.kotlin.types.ConstantValueKind
 internal class FirCompileTimeConstantEvaluator {
 
     // TODO: Handle boolean operators, const property loading, class reference, array, annotation values, etc.
-    fun evaluate(expression: FirExpression): ConstantValue<*>? =
+    fun evaluate(expression: FirExpression): KtSimpleConstantValue<*>? =
         when (expression) {
-            is FirConstExpression<*> -> expression.value as? ConstantValue<*>
-            is FirFunctionCall -> evaluate(expression)?.value as? ConstantValue<*>
+            is FirConstExpression<*> -> expression.convertConstantExpression()
+            is FirFunctionCall -> evaluate(expression)?.convertConstantExpression()
             else -> null
         }
 
